@@ -187,6 +187,7 @@ header .sub{opacity:.9;font-size:12px;margin-top:2px}
   #printArea.pl5030{width:48mm;font-size:7.5px;line-height:1.35}
   #printArea.pl6080{width:58mm;font-size:9.5px;line-height:1.4}
   #printArea.pl100150{width:94mm;font-size:12px;line-height:1.5}
+  #printArea .tear{height:10mm}
   #printArea .lbl-big{font-size:1.65em;font-weight:800;text-align:center;margin:2px 0}
   #printArea .lbl-mid{text-align:center}
   #printArea .ctr{text-align:center}
@@ -1313,7 +1314,8 @@ function receiptDocHTML(o){
     (o.pay && o.pay.method === 'cash'
       ? '<tr><td>รับเงิน</td><td class="r">' + fmt(o.pay.received) + '</td></tr><tr><td>เงินทอน</td><td class="r">' + fmt(o.pay.change) + '</td></tr>'
       : '') +
-    '</table><hr><div class="ctr sub">' + esc(settings.footer || 'ขอบคุณที่อุดหนุนครับ/ค่ะ') + '</div>';
+    '</table><hr><div class="ctr sub">' + esc(settings.footer || 'ขอบคุณที่อุดหนุนครับ/ค่ะ') + '</div>' +
+    ((p === '58' || p === '80') ? '<div class="tear"></div>' : '');
   return h;
 }
 function printReceipt(o){

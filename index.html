@@ -25,10 +25,10 @@
 html,body{margin:0;padding:0}
 body{
   font-family:-apple-system,BlinkMacSystemFont,"SF Pro Thai","PingFang HK","Helvetica Neue",Arial,sans-serif;
-  background:var(--bg); color:var(--text); padding-bottom:110px; min-height:100vh;
+  background:var(--bg); color:var(--text); padding-bottom:calc(var(--tabbar-h, 64px) + 50px); min-height:100vh;
 }
-body.has-cartbar{padding-bottom:230px}
-html{scroll-padding-bottom:230px}
+body.has-cartbar{padding-bottom:calc(var(--tabbar-h, 64px) + 170px)}
+html{scroll-padding-bottom:calc(var(--tabbar-h, 64px) + 170px)}
 .app{max-width:680px;margin:0 auto;padding:0 12px}
 header{background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;border-radius:0 0 22px 22px;padding:16px 16px 18px;position:relative}
 header .headrow{display:flex;justify-content:space-between;align-items:center;gap:10px}
@@ -46,7 +46,7 @@ header .sub{opacity:.9;font-size:12px;margin-top:2px}
 /* tabs */
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(255,255,255,.97);backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
 .tabbar button{flex:1;position:relative;border:none;background:none;padding:7px 2px 5px;font-size:10.5px;color:var(--muted);font-weight:700;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;font-family:inherit;border-radius:14px;transition:background .15s,color .15s}
-.tabbar button .ic{font-size:20px;line-height:1;transition:font-size .15s,transform .15s;display:block}
+.tabbar button .ic{font-size:20px;line-height:1;transition:font-size .15s,transform .15s;display:flex;align-items:center;justify-content:center;height:30px;min-height:30px}
 .tabbar button.on{color:var(--primary);background:#e6f4f2}
 .tabbar button.on .ic{font-size:28px;transform:translateY(-1px)}
 .tabbar button.on::before{content:'';position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:28px;height:3px;border-radius:99px;background:var(--primary)}
@@ -77,7 +77,7 @@ header .sub{opacity:.9;font-size:12px;margin-top:2px}
 .empty{text-align:center;color:var(--muted);font-size:13.5px;padding:34px 10px;line-height:1.7}
 
 /* cart bar */
-.cartbar{position:fixed;left:0;right:0;bottom:calc(56px + env(safe-area-inset-bottom));z-index:25;padding:0 12px}
+.cartbar{position:fixed;left:0;right:0;bottom:calc(var(--tabbar-h, 64px) + 8px);z-index:25;padding:0 12px}
 .cartbar .inner{max-width:680px;margin:0 auto;background:var(--primary);color:#fff;border-radius:14px;padding:11px 13px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 22px rgba(15,118,110,.35)}
 .cartbar.hide{display:none}
 .cartbar .n{font-size:12px;opacity:.9}
@@ -178,9 +178,9 @@ header .sub{opacity:.9;font-size:12px;margin-top:2px}
 .receipt td.r{text-align:right;white-space:nowrap}
 .receipt .sum{font-weight:800;font-size:15px}
 .receipt .void{color:var(--out);font-weight:800;text-align:center;margin:6px 0}
-.saved{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);background:#0f172a;color:#fff;padding:10px 18px;border-radius:99px;font-size:13.5px;font-weight:700;opacity:0;transition:all .25s;z-index:60;pointer-events:none;max-width:90vw;text-align:center}
+.saved{position:fixed;left:50%;bottom:calc(var(--tabbar-h, 64px) + 36px);transform:translateX(-50%) translateY(20px);background:#0f172a;color:#fff;padding:10px 18px;border-radius:99px;font-size:13.5px;font-weight:700;opacity:0;transition:all .25s;z-index:60;pointer-events:none;max-width:90vw;text-align:center}
 .saved.show{opacity:1;transform:translateX(-50%) translateY(0)}
-body.has-cartbar .saved{bottom:180px}
+body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
 #printArea{display:none}
 @media print{
   body{padding:0;background:#fff;margin:0}
@@ -741,7 +741,16 @@ function renderCart(){
   $('btnCheckout').disabled = !ok;
   $('btnCheckout').textContent = payMethod === 'cash' ? '✅ รับเงินสด ' + money(t.total) : '✅ ยืนยันว่าโอนแล้ว ' + money(t.total);
 }
+function syncTabbarHeight(){
+  var tb = document.querySelector('.tabbar');
+  if (!tb) return;
+  var h = Math.round(tb.getBoundingClientRect().height);
+  if (h > 0) document.documentElement.style.setProperty('--tabbar-h', h + 'px');
+}
+window.addEventListener('resize', function(){ syncTabbarHeight(); });
+window.addEventListener('orientationchange', function(){ setTimeout(syncTabbarHeight, 350); });
 function updateCartBar(){
+  syncTabbarHeight();
   var n = cartItems().length;
   var show = n > 0 && currentView === 'Sell';
   var bar = document.getElementById('cartbar');
@@ -1425,6 +1434,9 @@ Array.prototype.forEach.call(document.querySelectorAll('.tabbar button'), functi
   bar.innerHTML = '<div class="inner"><div><div class="n">0 ชิ้น</div><div class="t">฿0.00</div></div><button id="btnOpenCart">ดูตะกร้า / ชำระเงิน →</button></div>';
   document.body.insertBefore(bar, document.getElementById('ovCart'));
   bar.querySelector('#btnOpenCart').onclick = function(){ openSheet('Cart', true); renderCart(); };
+  syncTabbarHeight();
+  if (document.fonts && document.fonts.ready) { try { document.fonts.ready.then(syncTabbarHeight); } catch(e){} }
+  window.addEventListener('load', function(){ setTimeout(syncTabbarHeight, 200); });
 
   if (useLocal) {
     if (!products.length) {

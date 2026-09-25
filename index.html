@@ -13,6 +13,7 @@
 <script src="vendor/promptpay.js"></script>
 <script src="vendor/qrcode.min.js"></script>
 <script src="firebase-config.js"></script>
+<style id="pageStyle"></style>
 <style>
 :root{
   --primary:#0f766e; --primary2:#0d9488;
@@ -174,13 +175,23 @@ header .sub{opacity:.9;font-size:12px;margin-top:2px}
 .saved.show{opacity:1;transform:translateX(-50%) translateY(0)}
 #printArea{display:none}
 @media print{
-  body{padding:0;background:#fff}
+  body{padding:0;background:#fff;margin:0}
   body>*{display:none !important}
-  #printArea{display:block !important;font-family:-apple-system,"SF Pro Thai",sans-serif;font-size:12px;line-height:1.5;width:78mm;margin:0 auto}
-  #printArea table{width:100%;border-collapse:collapse;font-size:12px}
-  #printArea td.r{text-align:right}
+  #printArea{display:block !important;color:#000;background:#fff;margin:0 auto;padding:0;
+    font-family:"SF Pro Thai",-apple-system,"PingFang HK",Tahoma,sans-serif;line-height:1.45}
+  #printArea.p58{width:56mm;font-size:10px}
+  #printArea.p80{width:76mm;font-size:11.5px}
+  #printArea.pa4{width:176mm;font-size:13px;line-height:1.6}
   #printArea .ctr{text-align:center}
-  #printArea hr{border:none;border-top:1px dashed #000;margin:6px 0}
+  #printArea .shop{font-weight:800;font-size:1.35em;line-height:1.3}
+  #printArea .sub{font-size:.92em}
+  #printArea .big{font-size:1.3em;font-weight:800}
+  #printArea table{width:100%;border-collapse:collapse}
+  #printArea td{padding:1px 0;vertical-align:top}
+  #printArea td.r{text-align:right;white-space:nowrap;padding-left:6px}
+  #printArea hr{border:none;border-top:1px dashed #000;margin:5px 0;height:0}
+  #printArea.pa4 hr{border-top:1px solid #999}
+  #printArea.pa4 .ctr .shop{font-size:1.6em}
 }
 </style>
 </head>
@@ -264,9 +275,16 @@ header .sub{opacity:.9;font-size:12px;margin-top:2px}
       <div class="fld"><label>พร้อมเพย์ / เบอร์โทรสำหรับรับเงิน (ใช้สร้าง QR)</label><input id="sPP" inputmode="numeric" placeholder="เช่น 0812345678 หรือเลขบัตรประชาชน 13 หลัก"></div>
       <div class="fld"><label>ชื่อผู้ขาย (ไม่ใส่ก็ได้)</label><input id="sSeller" placeholder="เช่น ปิม"></div>
       <div class="fld"><label>ข้อความท้ายใบเสร็จ</label><textarea id="sFoot" placeholder="เช่น ขอบคุณที่อุดหนุนครับ/ค่ะ"></textarea></div>
+      <div class="fld"><label>ขนาดกระดาษเครื่องพิมพ์ใบเสร็จ</label>
+        <select id="sPaper">
+          <option value="58">58mm — เครื่องพิมพ์ความร้อนใบเสร็จ (มาตรฐานร้านค้า)</option>
+          <option value="80">80mm — เครื่องพิมพ์ความร้อนกระดาษกว้าง</option>
+          <option value="a4">A4 / A5 — เครื่องพิมพ์บ้าน (AirPrint)</option>
+        </select></div>
       <div class="fld"><label>เตือนเมื่อสต็อกต่ำกว่าเกณฑ์</label>
         <select id="sWarn"><option value="1">เตือน</option><option value="0">ไม่ต้องเตือน</option></select></div>
       <button class="btn" id="btnSaveSettings">💾 บันทึกการตั้งค่า</button>
+      <button class="btn ghost" id="btnTestPrint">🖨️ ทดสอบพิมพ์ใบเสร็จตัวอย่าง</button>
     </div>
     <div class="card">
       <div class="sect" style="margin-top:0">สถานะระบบ</div>
@@ -314,8 +332,13 @@ header .sub{opacity:.9;font-size:12px;margin-top:2px}
 <div class="sheet" id="sheetOrder">
   <h2>🧾 ใบเสร็จ <button class="x" id="xOrder">✕</button></h2>
   <div id="orderBody"></div>
+  <div class="fld" style="margin-top:12px"><label>ขนาดกระดาษใบเสร็จ</label>
+    <div class="seg" id="paperSeg">
+      <button data-p="58">58mm</button><button data-p="80">80mm</button><button data-p="a4">A4/A5</button>
+    </div>
+  </div>
   <button class="btn ghost" id="btnCopy">📋 คัดลอกข้อความใบเสร็จ</button>
-  <button class="btn ghost" id="btnPrint">🖨️ พิมพ์ / บันทึกเป็น PDF</button>
+  <button class="btn ghost" id="btnPrint">🖨️ พิมพ์ใบเสร็จ</button>
   <button class="btn danger" id="btnVoid" style="display:none">↩️ ยกเลิกบิลนี้ (คืนสต็อก)</button>
 </div>
 
@@ -447,7 +470,8 @@ function localLoad(){
     settings = JSON.parse(localStorage.getItem(LS.s) || '{}');
   } catch(e){ products = []; orders = []; settings = {}; }
   products.forEach(function(p){ if (!p.id) p.id = uid(); });
-  if (!settings.shopName) settings = Object.assign({ shopName: 'ร้านของฉัน', promptpay: '', seller: '', footer: 'ขอบคุณที่อุดหนุนครับ/ค่ะ', warnLow: '1' }, settings);
+  if (!settings.shopName) settings = Object.assign({ shopName: 'ร้านของฉัน', promptpay: '', seller: '', footer: 'ขอบคุณที่อุดหนุนครับ/ค่ะ', warnLow: '1', paper: '58' }, settings);
+  if (!settings.paper) settings.paper = '58';
 }
 function localSave(){
   try {
@@ -1157,6 +1181,7 @@ function renderSettings(){
   setIf('sSeller', settings.seller || '');
   setIf('sFoot', settings.footer || '');
   if (!f || f.id !== 'sWarn') $('sWarn').value = settings.warnLow === '0' ? '0' : '1';
+  renderPaperSeg();
 }
 
 // ---------- sheets ----------
@@ -1191,25 +1216,88 @@ $('btnCopy').onclick = function(){
     document.body.removeChild(ta);
   }
 };
-$('btnPrint').onclick = function(){
-  if (!currentOrder) return;
-  var o = currentOrder;
-  $('printArea').innerHTML = '<div class="ctr"><b style="font-size:14px">' + esc(settings.shopName || 'ร้านของฉัน') + '</b><br>ใบเสร็จรับเงิน' + (o.status === 'void' ? ' (ยกเลิก)' : '') + '<br>#' + esc(o.no) + ' · ' + thaiDateTime(toMs(o.at)) + '</div><hr>' +
-    '<table>' + (o.items||[]).map(function(i){ return '<tr><td>' + esc(i.name) + ' ' + fmtQty(i.qty) + '×' + fmt(i.price) + '</td><td class="r">' + fmt(i.price*i.qty) + '</td></tr>'; }).join('') + '</table><hr>' +
-    '<table><tr><td>รวม</td><td class="r">' + fmt(o.subtotal) + '</td></tr>' +
+// ---------- พิมพ์ใบเสร็จ (58mm / 80mm / A4-A5) ----------
+function curPaper(){ return settings.paper === '80' ? '80' : (settings.paper === 'a4' ? 'a4' : '58'); }
+function applyPageSize(){
+  var p = curPaper();
+  // หมายเหตุ: Chrome ไม่รับ `size: <ความกว้าง> auto` (จะตกไปใช้ Letter) ต้องระบุความสูงด้วย
+  var size = p === '80' ? '80mm 210mm' : (p === 'a4' ? 'A4' : '58mm 180mm');
+  var margin = p === 'a4' ? '12mm' : '0mm';
+  var st = $('pageStyle');
+  if (st) st.textContent = '@media print{@page{size:' + size + ';margin:' + margin + '}}';
+}
+function renderPaperSeg(){
+  var p = curPaper();
+  if ($('paperSeg')) {
+    Array.prototype.forEach.call($('paperSeg').querySelectorAll('button'), function(b){
+      b.classList.toggle('on', b.getAttribute('data-p') === p);
+    });
+  }
+  if ($('sPaper') && (!document.activeElement || document.activeElement.id !== 'sPaper')) $('sPaper').value = p;
+  if ($('btnPrint')) $('btnPrint').textContent = '🖨️ พิมพ์ใบเสร็จ (' + (p === '58' ? '58mm' : (p === '80' ? '80mm' : 'A4/A5')) + ')';
+}
+function setPaper(p){
+  settings.paper = (p === '80' || p === 'a4') ? p : '58';
+  applyPageSize(); renderPaperSeg();
+  S.saveSettings({ paper: settings.paper }).catch(function(){});
+  toast('🖨️ ตั้งกระดาษเป็น ' + (settings.paper === '58' ? '58mm' : (settings.paper === '80' ? '80mm' : 'A4/A5')) + ' แล้ว');
+}
+function receiptDocHTML(o){
+  var isVoid = o.status === 'void';
+  var rows = (o.items||[]).map(function(i){
+    return '<tr><td>' + esc(i.name) + '<div class="sub">' + fmtQty(i.qty) + ' × ' + fmt(i.price) + ' ' + esc(i.unit || '') + '</div></td>' +
+      '<td class="r">' + fmt(i.price * i.qty) + '</td></tr>';
+  }).join('');
+  var payTxt = (o.pay && o.pay.method === 'transfer') ? 'โอน / พร้อมเพย์' : 'เงินสด';
+  var h = '<div class="ctr">' +
+    '<div class="shop">' + esc(settings.shopName || 'ร้านของฉัน') + '</div>' +
+    '<div class="sub">' + (isVoid ? '*** ยกเลิกบิล ***' : 'ใบเสร็จรับเงิน') + '</div>' +
+    '<div class="sub">เลขที่ #' + esc(o.no) + '</div>' +
+    '<div class="sub">' + thaiDateTime(toMs(o.at)) + '</div>' +
+    (o.seller ? '<div class="sub">ผู้ขาย: ' + esc(o.seller) + '</div>' : '') +
+    '</div><hr><table>' + rows + '</table><hr><table>' +
+    '<tr><td>รวม</td><td class="r">' + fmt(o.subtotal) + '</td></tr>' +
     (n2(o.discount) ? '<tr><td>ส่วนลด</td><td class="r">-' + fmt(o.discount) + '</td></tr>' : '') +
-    '<tr><td><b>ยอดสุทธิ</b></td><td class="r"><b>' + fmt(o.total) + '</b></td></tr>' +
-    '<tr><td>' + (o.pay && o.pay.method === 'transfer' ? 'โอน/พร้อมเพย์' : 'เงินสด') + '</td><td class="r"></td></tr></table><hr>' +
-    '<div class="ctr">' + esc(settings.footer || 'ขอบคุณที่อุดหนุนครับ/ค่ะ') + '</div>';
-  window.print();
-};
+    '<tr><td class="big">ยอดสุทธิ</td><td class="r big">' + fmt(o.total) + '</td></tr>' +
+    '<tr><td>ชำระโดย</td><td class="r">' + payTxt + '</td></tr>' +
+    (o.pay && o.pay.method === 'cash'
+      ? '<tr><td>รับเงิน</td><td class="r">' + fmt(o.pay.received) + '</td></tr><tr><td>เงินทอน</td><td class="r">' + fmt(o.pay.change) + '</td></tr>'
+      : '') +
+    '</table><hr><div class="ctr sub">' + esc(settings.footer || 'ขอบคุณที่อุดหนุนครับ/ค่ะ') + '</div>';
+  return h;
+}
+function printReceipt(o){
+  var p = curPaper();
+  $('printArea').className = p === 'a4' ? 'pa4' : ('p' + p);
+  $('printArea').innerHTML = receiptDocHTML(o);
+  applyPageSize();
+  setTimeout(function(){ try { window.print(); } catch(e){ toast('⚠️ เปิดหน้าต่างพิมพ์ไม่ได้'); } }, 80);
+}
+function sampleOrder(){
+  var d = Date.now(), items = [
+    { name: 'ไหมอุด้ง', unit: 'เมตร', price: 350, qty: 2 },
+    { name: 'ผ้าฝ้ายพื้นเมือง', unit: 'เมตร', price: 180, qty: 1.5 },
+    { name: 'ผ้าไหมยกดอก', unit: 'เมตร', price: 450, qty: 1 }
+  ];
+  var sub = items.reduce(function(s,i){ return s + i.price * i.qty; }, 0);
+  var disc = 50, total = n2(sub - disc);
+  return { no: 'ตัวอย่าง', at: d, items: items, subtotal: n2(sub), discount: disc, total: total,
+    pay: { method: 'cash', received: 1500, change: n2(1500 - total) }, seller: settings.seller || '', status: 'paid' };
+}
+$('btnPrint').onclick = function(){ if (currentOrder) printReceipt(currentOrder); };
+$('btnTestPrint').onclick = function(){ printReceipt(sampleOrder()); };
+Array.prototype.forEach.call($('paperSeg').querySelectorAll('button'), function(b){
+  b.onclick = function(){ setPaper(b.getAttribute('data-p')); };
+});
+$('sPaper').onchange = function(){ setPaper($('sPaper').value); };
 $('btnSaveSettings').onclick = function(){
   var s = {
     shopName: ($('sShop').value || '').trim() || 'ร้านของฉัน',
     promptpay: ($('sPP').value || '').replace(/[^0-9]/g, ''),
     seller: ($('sSeller').value || '').trim(),
     footer: ($('sFoot').value || '').trim(),
-    warnLow: $('sWarn').value
+    warnLow: $('sWarn').value,
+    paper: $('sPaper').value
   };
   if (s.promptpay && s.promptpay.length < 9) { toast('⚠️ เลขพร้อมเพย์สั้นเกินไป (ต้องเป็นเบอร์ 10 หลัก หรือเลขบัตร 13 หลัก)'); return; }
   S.saveSettings(s).then(function(){ toast('💾 บันทึกการตั้งค่าแล้ว'); renderAll(); })
@@ -1265,6 +1353,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tabbar button'), functi
         settings = d.exists ? d.data() : {};
         if (!settings.shopName) settings.shopName = 'ร้านของฉัน';
         if (settings.footer == null) settings.footer = 'ขอบคุณที่อุดหนุนครับ/ค่ะ';
+        if (!settings.paper) settings.paper = '58';
         renderAll();
       }, function(e){ showErr('อ่านการตั้งค่าไม่ได้: ' + e.message); });
     } catch(e){ showErr('เริ่มระบบไม่สำเร็จ: ' + e.message); }

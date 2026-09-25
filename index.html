@@ -43,9 +43,12 @@ header .sub{opacity:.9;font-size:12px;margin-top:2px}
 
 /* tabs */
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(255,255,255,.97);backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
-.tabbar button{flex:1;border:none;background:none;padding:6px 2px;font-size:10.5px;color:var(--muted);font-weight:700;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;font-family:inherit}
-.tabbar button .ic{font-size:20px;line-height:1}
-.tabbar button.on{color:var(--primary)}
+.tabbar button{flex:1;position:relative;border:none;background:none;padding:7px 2px 5px;font-size:10.5px;color:var(--muted);font-weight:700;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;font-family:inherit;border-radius:14px;transition:background .15s,color .15s}
+.tabbar button .ic{font-size:20px;line-height:1;transition:font-size .15s,transform .15s;display:block}
+.tabbar button.on{color:var(--primary);background:#e6f4f2}
+.tabbar button.on .ic{font-size:28px;transform:translateY(-1px)}
+.tabbar button.on::before{content:'';position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:28px;height:3px;border-radius:99px;background:var(--primary)}
+.tabbar button.on span:not(.ic){font-size:11px}
 
 .view{display:none} .view.on{display:block}
 .toolbar{display:flex;gap:8px;margin:12px 0 8px;align-items:center}
@@ -360,6 +363,7 @@ header .sub{opacity:.9;font-size:12px;margin-top:2px}
     • <b>ความร้อน LAN / WiFi / Bluetooth</b> → กดพิมพ์ → <b>Save to Files</b> เก็บเป็น PDF → เปิด<b>แอพที่พิมพ์ PDF ได้</b> (เลือกตัวที่ตรงกับเครื่อง เช่น BR RawPrinter, PDF Thermal Print, Thermer, Pos printer PrinterApp, แอพของยี่ห้อ) → เลือกเครื่อง/ใส่ IP → พิมพ์<br>
     • <b>ยังไม่มีเครื่องพิมพ์</b> → กดพิมพ์ → <b>Save to Files</b> แล้วส่งไฟล์ PDF ให้ลูกค้าทาง LINE ได้เลย</div>
   <button class="btn danger" id="btnVoid" style="display:none">↩️ ยกเลิกบิลนี้ (คืนสต็อก)</button>
+  <button class="btn danger" id="btnDelBill" style="display:none">🗑️ ลบบิลนี้ออกจากประวัติ</button>
 </div>
 
 <nav class="tabbar">
@@ -479,6 +483,7 @@ var S = {
   saveSettings: function(s){ return Promise.resolve(); },
   saveProduct: function(){ return Promise.resolve(); },
   deleteProduct: function(){ return Promise.resolve(); },
+  deleteOrder: function(){ return Promise.resolve(); },
   setStock: function(){ return Promise.resolve(); },
   addLog: function(){ return Promise.resolve(); }
 };
@@ -525,6 +530,7 @@ if (useLocal) {
     localSave(); S.onProducts(function(){ renderAll(); }); return Promise.resolve(id || p.id);
   };
   S.deleteProduct = function(id){ products = products.filter(function(y){ return y.id !== id; }); localSave(); S.onProducts(function(){ renderAll(); }); return Promise.resolve(); };
+  S.deleteOrder = function(id){ orders = orders.filter(function(y){ return y.id !== id; }); localSave(); S.onOrders(function(){ renderAll(); }); return Promise.resolve(); };
   S.setStock = function(id, value){ var p = products.find(function(y){ return y.id === id; }); if (p) p.stock = n2(value); localSave(); S.onProducts(function(){ renderAll(); }); return Promise.resolve(); };
   S.addLog = function(){ return Promise.resolve(); };
 } else {
@@ -588,6 +594,7 @@ if (useLocal) {
     return db.collection('products').add(Object.assign({}, p, { createdAt: ts, updatedAt: ts }));
   };
   S.deleteProduct = function(id){ return db.collection('products').doc(id).delete(); };
+  S.deleteOrder = function(id){ return db.collection('orders').doc(id).delete(); };
   S.setStock = function(id, value){
     return db.collection('products').doc(id).update({ stock: n2(value), updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
   };
@@ -611,7 +618,7 @@ function renderAll(){ renderHead(); renderCats(); renderProducts(); renderCart()
 function renderHead(){
   $('shopName').textContent = settings.shopName || 'ร้านของฉัน';
   var t = todayStats();
-  $('headSub').textContent = 'ขายหน้าร้าน + จัดการสต็อก';
+  $('headSub').textContent = viewName(currentView);
   $('todayMini').textContent = 'วันนี้ ' + money(t.total) + ' · ' + t.count + ' บิล';
 }
 
@@ -759,6 +766,10 @@ function nextOrderNo(){
     var k = o.dayKey || dayKeyOf(toMs(o.at));
     if (k === today && Number(o.seq) > seq) seq = Number(o.seq);
   });
+  if (settings.lastNoDay === today && settings.lastNo) {
+    var s = Number(String(settings.lastNo).split('-').pop());
+    if (s > seq) seq = s;
+  }
   var n = seq + 1;
   var d = today.replace(/-/g,'').slice(2);
   return { no: d + '-' + ('00' + n).slice(-3), seq: n, dayKey: today };
@@ -777,6 +788,7 @@ function checkout(){
   };
   $('btnCheckout').disabled = true;
   S.saveOrder(order).then(function(newId){
+    S.saveSettings({ lastNo: order.no, lastNoDay: order.dayKey }).catch(function(){});
     toast('✅ บันทึกการขายแล้ว ' + money(order.total));
     cart = {}; $('discount').value = ''; $('received').value = ''; $('gotPaid').checked = false;
     openSheet('Cart', false);
@@ -793,6 +805,9 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
+var currentView = 'Sell';
+var VIEW_NAMES = { Sell: '🛒 หน้าขาย', Stock: '📦 หน้าสินค้า / นับสต็อก', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
+function viewName(v){ return VIEW_NAMES[v] || ''; }
 
 function stockStats(){
   var value = products.reduce(function(s,p){ return s + n2(p.stock) * n2(p.price); }, 0);
@@ -1114,6 +1129,7 @@ function showOrder(o, justSaved){
   currentOrder = o;
   $('orderBody').innerHTML = (justSaved ? '<div class="banner" style="background:var(--okbg);color:var(--ok);border:1px solid #6ee7b7;margin:0 0 10px">✅ บันทึกการขายเรียบร้อย ตัดสต็อกแล้ว</div>' : '') + receiptHTML(o);
   $('btnVoid').style.display = (o.status === 'void' || !o.id) ? 'none' : 'block';
+  $('btnDelBill').style.display = o.id ? 'block' : 'none';
   openSheet('Order', true);
 }
 
@@ -1224,6 +1240,24 @@ $('payCash').onclick = function(){ payMethod = 'cash'; $('payCash').classList.ad
 $('payTransfer').onclick = function(){ payMethod = 'transfer'; $('payTransfer').classList.add('on'); $('payCash').classList.remove('on'); $('cashBox').style.display = 'none'; $('transferBox').style.display = ''; renderCart(); };
 $('btnCheckout').onclick = checkout;
 $('btnVoid').onclick = voidOrder;
+function deleteBill(){
+  var o = currentOrder;
+  if (!o || !o.id) return;
+  var needRestore = (o.status !== 'void');
+  var msg = 'ลบบิล #' + o.no + ' (' + money(o.total) + ') ออกจากประวัติ?\n\n' +
+    (needRestore ? 'บิลนี้ยังไม่ถูกยกเลิก → สต็อกสินค้าในบิลนี้จะถูกคืนกลับ' : 'บิลนี้ยกเลิกไปแล้ว (สต็อกคืนแล้ว) → จะลบเฉพาะประวัติ') +
+    '\n\nลบแล้วกู้คืนไม่ได้';
+  if (!confirm(msg)) return;
+  var chain = S.deleteOrder(o.id);
+  if (needRestore) chain = chain.then(function(){ return S.adjustStock(o.items, +1); });
+  chain.then(function(){
+    return S.addLog('delete', 'ลบบิล ' + o.no + ' · ' + itemsSummary(o.items) + ' · ' + money(o.total) + (needRestore ? ' · คืนสต็อก' : ' · (ยกเลิกอยู่แล้ว)'));
+  }).then(function(){
+    toast('🗑️ ลบบิลแล้ว' + (needRestore ? ' · คืนสต็อกแล้ว' : ''));
+    openSheet('Order', false);
+  }).catch(function(e){ toast('⚠️ ลบไม่สำเร็จ: ' + e.message); });
+}
+$('btnDelBill').onclick = deleteBill;
 $('btnCopy').onclick = function(){
   if (!currentOrder) return;
   var txt = receiptText(currentOrder);
@@ -1364,7 +1398,9 @@ Array.prototype.forEach.call(document.querySelectorAll('.tabbar button'), functi
     Array.prototype.forEach.call(document.querySelectorAll('.tabbar button'), function(x){ x.classList.remove('on'); });
     Array.prototype.forEach.call(document.querySelectorAll('.view'), function(x){ x.classList.remove('on'); });
     b.classList.add('on');
-    $('view' + b.getAttribute('data-view')).classList.add('on');
+    currentView = b.getAttribute('data-view');
+    $('headSub').textContent = viewName(currentView);
+    $('view' + currentView).classList.add('on');
     var cb = document.getElementById('cartbar');
     if (cb) cb.classList.toggle('hide', b.getAttribute('data-view') !== 'Sell' || !Object.keys(cart).length);
     window.scrollTo(0,0);

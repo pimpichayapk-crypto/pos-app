@@ -110,6 +110,21 @@ header .sub{opacity:.9;font-size:12px;margin-top:2px}
 .toprow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .toprow .q{font-weight:800;color:var(--primary)}
 
+/* สินค้า / สต็อก */
+.srow{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid rgba(226,232,240,.85);border-radius:14px;padding:10px;margin-bottom:8px}
+.srow .pico{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#eef2ff,#f0fdfa);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;overflow:hidden}
+.srow .pico img{width:100%;height:100%;object-fit:cover}
+.srow .l{flex:1;min-width:0;cursor:pointer}
+.srow .nm{font-weight:700;font-size:14px;line-height:1.25}
+.srow .mt{font-size:11.5px;color:var(--muted);margin-top:2px}
+.pill.ok{background:var(--okbg);color:var(--ok)}
+.pill.low{background:var(--lowbg);color:var(--low)}
+.pill.out{background:var(--outbg);color:var(--out)}
+.sortrow{display:flex;gap:8px;align-items:center;margin:0 0 10px}
+.sortrow select{flex:1;border:1px solid var(--line);border-radius:99px;background:var(--card);padding:8px 12px;font-size:12.5px;color:var(--text);outline:none;font-family:inherit}
+.sortrow label{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px;white-space:nowrap;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:8px 12px}
+.sortrow label input{width:auto;margin:0}
+
 /* sheets */
 .ov{position:fixed;inset:0;background:rgba(15,23,42,.45);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
 .ov.show{opacity:1;pointer-events:auto}
@@ -175,7 +190,7 @@ header .sub{opacity:.9;font-size:12px;margin-top:2px}
   <div class="headrow">
     <div>
       <h1 id="shopName">ร้านของฉัน</h1>
-      <div class="sub" id="headSub">ระบบขายหน้าร้าน (POS)</div>
+      <div class="sub" id="headSub">ขายหน้าร้าน + จัดการสต็อก</div>
     </div>
     <div style="text-align:right">
       <div class="live" id="live"><span class="dot"></span><span id="liveTxt">เชื่อมต่อ…</span></div>
@@ -196,7 +211,28 @@ header .sub{opacity:.9;font-size:12px;margin-top:2px}
     </div>
     <div class="chips" id="cats"></div>
     <div class="grid" id="pgrid"></div>
-    <div class="empty" id="pempty" style="display:none">ไม่พบสินค้า — เพิ่มสินค้าได้ที่แอพ “คลังสินค้า”</div>
+    <div class="empty" id="pempty" style="display:none">ไม่พบสินค้า<br><button class="chip" id="btnAddFromSell" style="padding:9px 14px;margin-top:10px">➕ เพิ่มสินค้าใหม่</button></div>
+  </section>
+
+  <!-- ================= สินค้า / สต็อก ================= -->
+  <section class="view" id="viewStock">
+    <div class="stats three" id="stStats"></div>
+    <div class="toolbar">
+      <div class="searchwrap"><span class="ic">🔍</span><input id="sq" type="search" placeholder="ค้นหาชื่อสินค้า / หมวดหมู่ / หมายเหตุ"></div>
+      <button class="chip" id="btnAddProduct" style="padding:11px 14px">➕ เพิ่มสินค้า</button>
+    </div>
+    <div class="chips" id="scats"></div>
+    <div class="sortrow">
+      <select id="ssort">
+        <option value="name">เรียง: ชื่อ ก→ฮ</option>
+        <option value="stock">เรียง: สต็อกน้อย→มาก</option>
+        <option value="price">เรียง: ราคามาก→น้อย</option>
+        <option value="value">เรียง: มูลค่าสต็อกมาก→น้อย</option>
+      </select>
+      <label><input type="checkbox" id="slowOnly"> เฉพาะใกล้หมด/หมด</label>
+    </div>
+    <div id="slist"></div>
+    <div class="empty" id="sempty" style="display:none">ยังไม่มีสินค้า — กด ➕ เพิ่มสินค้า</div>
   </section>
 
   <!-- ================= ประวัติ ================= -->
@@ -285,10 +321,54 @@ header .sub{opacity:.9;font-size:12px;margin-top:2px}
 
 <nav class="tabbar">
   <button data-view="Sell" class="on"><span class="ic">🛒</span>ขาย</button>
+  <button data-view="Stock"><span class="ic">📦</span>สินค้า</button>
   <button data-view="History"><span class="ic">🧾</span>ประวัติ</button>
   <button data-view="Report"><span class="ic">📊</span>สรุป</button>
   <button data-view="Settings"><span class="ic">⚙️</span>ตั้งค่า</button>
 </nav>
+
+<div class="ov" id="ovForm"></div>
+<div class="sheet" id="sheetForm">
+  <h2><span id="formTitleTxt">➕ เพิ่มสินค้า</span> <button class="x" id="xForm">✕</button></h2>
+  <div class="fld"><label>ชื่อสินค้า *</label><input id="fName" placeholder="เช่น ไหมอุด้ง"></div>
+  <div class="fld"><label>หมวดหมู่</label><input id="fCat" list="catList" placeholder="เช่น ไหม / ผ้าฝ้าย"><datalist id="catList"></datalist></div>
+  <div style="display:flex;gap:8px">
+    <div class="fld" style="flex:1"><label>ราคา/หน่วย (บาท)</label><input id="fPrice" inputmode="decimal" placeholder="0"></div>
+    <div class="fld" style="flex:1"><label>หน่วยนับ</label><input id="fUnit" placeholder="เมตร / ชิ้น" value="ชิ้น"></div>
+  </div>
+  <div style="display:flex;gap:8px">
+    <div class="fld" style="flex:1"><label>จำนวนสต็อก</label><input id="fStock" inputmode="decimal" placeholder="0"></div>
+    <div class="fld" style="flex:1"><label>เกณฑ์เตือนใกล้หมด</label><input id="fLow" inputmode="numeric" value="5"></div>
+  </div>
+  <div class="fld"><label>หมายเหตุ</label><input id="fNote" placeholder="ไม่ใส่ก็ได้"></div>
+  <div class="fld"><label>รูปสินค้า (ไม่ใส่ก็ได้)</label>
+    <div style="display:flex;gap:10px;align-items:center">
+      <div class="pico" id="imgPrev" style="width:56px;height:56px;border-radius:14px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden">📦</div>
+      <button class="chip" id="btnPickImg" style="padding:9px 14px">📷 เลือกรูป</button>
+      <button class="chip" id="btnClearImg" style="padding:9px 14px;display:none">ลบรูป</button>
+    </div>
+    <input type="file" id="fImg" accept="image/*" style="display:none">
+  </div>
+  <button class="btn" id="btnSaveProduct">💾 บันทึกสินค้า</button>
+  <button class="btn ghost" id="btnCloseForm">ปิด</button>
+</div>
+
+<div class="ov" id="ovStock"></div>
+<div class="sheet" id="sheetStock">
+  <h2><span id="stTitleTxt">📦 ปรับสต็อก</span> <button class="x" id="xStock">✕</button></h2>
+  <div class="totline big" style="margin-top:0"><span>สต็อกปัจจุบัน</span><span class="r" id="stNow">0</span></div>
+  <div class="fld"><label>เพิ่ม / ลด เร็ว ๆ (ใช้ตอนรับของเข้า)</label>
+    <div class="quick" id="qAdjust">
+      <button data-d="1">+1</button><button data-d="5">+5</button><button data-d="10">+10</button>
+      <button data-d="-1">−1</button><button data-d="-5">−5</button>
+    </div>
+  </div>
+  <div class="fld"><label>นับสต็อกใหม่ — ใส่จำนวนที่นับได้จริง</label><input id="stCount" inputmode="decimal" placeholder="0"></div>
+  <div class="fld"><label>หมายเหตุ (เช่น นับสต็อก / รับเข้า / ของหาย)</label><input id="stNote" placeholder="ไม่ใส่ก็ได้"></div>
+  <button class="btn" id="btnSaveCount">✅ บันทึกจำนวนที่นับได้</button>
+  <button class="btn ghost" id="btnEditProduct">✏️ แก้ไขข้อมูลสินค้า</button>
+  <button class="btn danger" id="btnDelProduct">🗑️ ลบสินค้านี้</button>
+</div>
 
 <div class="saved" id="toast"></div>
 <div id="printArea"></div>
@@ -353,7 +433,11 @@ var S = {
   saveOrder: function(o){ return Promise.resolve(); },
   updateOrder: function(id, patch){ return Promise.resolve(); },
   adjustStock: function(){ return Promise.resolve(); },
-  saveSettings: function(s){ return Promise.resolve(); }
+  saveSettings: function(s){ return Promise.resolve(); },
+  saveProduct: function(){ return Promise.resolve(); },
+  deleteProduct: function(){ return Promise.resolve(); },
+  setStock: function(){ return Promise.resolve(); },
+  addLog: function(){ return Promise.resolve(); }
 };
 
 function localLoad(){
@@ -391,6 +475,14 @@ if (useLocal) {
     localSave(); S.onProducts(function(x){ renderAll(x); }); return Promise.resolve();
   };
   S.saveSettings = function(s){ settings = Object.assign({}, settings, s); localSave(); S.onSettings(function(x){ renderAll(x); }); return Promise.resolve(); };
+  S.saveProduct = function(p, id){
+    if (id) { var x = products.find(function(y){ return y.id === id; }); if (x) Object.assign(x, p); }
+    else { p.id = uid(); products.push(p); }
+    localSave(); S.onProducts(function(){ renderAll(); }); return Promise.resolve(id || p.id);
+  };
+  S.deleteProduct = function(id){ products = products.filter(function(y){ return y.id !== id; }); localSave(); S.onProducts(function(){ renderAll(); }); return Promise.resolve(); };
+  S.setStock = function(id, value){ var p = products.find(function(y){ return y.id === id; }); if (p) p.stock = n2(value); localSave(); S.onProducts(function(){ renderAll(); }); return Promise.resolve(); };
+  S.addLog = function(){ return Promise.resolve(); };
 } else {
   S.onProducts = function(cb){
     db.collection('products').orderBy('name').onSnapshot(function(snap){
@@ -446,6 +538,18 @@ if (useLocal) {
   S.saveSettings = function(s){
     return db.collection('settings').doc('pos').set(Object.assign({}, s, { updatedAt: firebase.firestore.FieldValue.serverTimestamp() }), { merge: true });
   };
+  S.saveProduct = function(p, id){
+    var ts = firebase.firestore.FieldValue.serverTimestamp();
+    if (id) return db.collection('products').doc(id).update(Object.assign({}, p, { updatedAt: ts }));
+    return db.collection('products').add(Object.assign({}, p, { createdAt: ts, updatedAt: ts }));
+  };
+  S.deleteProduct = function(id){ return db.collection('products').doc(id).delete(); };
+  S.setStock = function(id, value){
+    return db.collection('products').doc(id).update({ stock: n2(value), updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+  };
+  S.addLog = function(action, detail){
+    return db.collection('logs').add({ action: action, detail: detail, at: firebase.firestore.FieldValue.serverTimestamp() });
+  };
 }
 
 // ---------- init ----------
@@ -459,11 +563,11 @@ function setLive(){
     'โปรเจกต์: <b>' + esc(isLive ? cfg.projectId : '—') + '</b><br>' +
     'สินค้า: <b>' + products.length + '</b> รายการ · บิล: <b>' + orders.length + '</b> ใบ';
 }
-function renderAll(){ renderHead(); renderCats(); renderProducts(); renderCart(); renderHistory(); renderReport(); renderSettings(); setLive(); }
+function renderAll(){ renderHead(); renderCats(); renderProducts(); renderCart(); renderStock(); renderHistory(); renderReport(); renderSettings(); setLive(); }
 function renderHead(){
   $('shopName').textContent = settings.shopName || 'ร้านของฉัน';
   var t = todayStats();
-  $('headSub').textContent = 'ระบบขายหน้าร้าน (POS)';
+  $('headSub').textContent = 'ขายหน้าร้าน + จัดการสต็อก';
   $('todayMini').textContent = 'วันนี้ ' + money(t.total) + ' · ' + t.count + ' บิล';
 }
 
@@ -642,6 +746,241 @@ function checkout(){
     renderCart();
   });
 }
+
+// ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
+var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
+
+function stockStats(){
+  var value = products.reduce(function(s,p){ return s + n2(p.stock) * n2(p.price); }, 0);
+  var low = products.filter(function(p){ var sc = stockClass(p); return sc === 'low' || sc === 'out'; }).length;
+  return { value: n2(value), low: low };
+}
+function renderStockStats(){
+  var st = stockStats();
+  $('stStats').innerHTML =
+    '<div class="stat"><div class="v blue">' + products.length + '</div><div class="l">รายการสินค้า</div></div>' +
+    '<div class="stat"><div class="v green">' + fmt(st.value) + '</div><div class="l">มูลค่าสต็อกรวม (บาท)</div></div>' +
+    '<div class="stat"><div class="v amber">' + st.low + '</div><div class="l">ใกล้หมด/หมด</div></div>';
+}
+function renderStockCats(){
+  var cats = products.map(function(p){ return p.category; }).filter(Boolean)
+    .filter(function(c,i,a){ return a.indexOf(c) === i; }).sort();
+  var html = '<button class="chip' + (sCat === 'all' ? ' active' : '') + '" data-cat="all">ทั้งหมด</button>';
+  cats.forEach(function(c){ html += '<button class="chip' + (sCat === c ? ' active' : '') + '" data-cat="' + esc(c) + '">' + esc(c) + '</button>'; });
+  $('scats').innerHTML = html;
+  Array.prototype.forEach.call($('scats').querySelectorAll('.chip'), function(b){
+    b.onclick = function(){ sCat = b.getAttribute('data-cat'); renderStock(); };
+  });
+}
+function sortedStock(){
+  var q = ($('sq').value || '').trim().toLowerCase();
+  var list = products.filter(function(p){
+    if (sCat !== 'all' && p.category !== sCat) return false;
+    if (sLowOnly) { var sc = stockClass(p); if (sc !== 'low' && sc !== 'out') return false; }
+    if (!q) return true;
+    return String(p.name || '').toLowerCase().indexOf(q) >= 0
+      || String(p.category || '').toLowerCase().indexOf(q) >= 0
+      || String(p.note || '').toLowerCase().indexOf(q) >= 0;
+  });
+  list.sort(function(a,b){
+    if (sSort === 'stock') return n2(a.stock) - n2(b.stock);
+    if (sSort === 'price') return n2(b.price) - n2(a.price);
+    if (sSort === 'value') return (n2(b.stock) * n2(b.price)) - (n2(a.stock) * n2(a.price));
+    return String(a.name || '').localeCompare(String(b.name || ''), 'th');
+  });
+  return list;
+}
+function renderStock(){
+  if (!$('slist')) return;
+  renderStockStats(); renderStockCats();
+  var list = sortedStock();
+  $('sempty').style.display = list.length ? 'none' : 'block';
+  $('sempty').textContent = products.length ? 'ไม่พบสินค้าตามเงื่อนไข' : 'ยังไม่มีสินค้า — กด ➕ เพิ่มสินค้า';
+  $('slist').innerHTML = list.map(function(p){
+    var sc = stockClass(p);
+    var ic = p.image ? '<img src="' + esc(p.image) + '" alt="">' : '📦';
+    var pill = sc === 'out' ? '<span class="pill out">หมด</span>' : (sc === 'low' ? '<span class="pill low">ใกล้หมด</span>' : '<span class="pill ok">ปกติ</span>');
+    var unit = esc(p.unit || 'ชิ้น');
+    return '<div class="srow" data-id="' + esc(p.id) + '">' +
+      '<div class="pico">' + ic + '</div>' +
+      '<div class="l" data-open="1"><div class="nm">' + esc(p.name) + '</div>' +
+      '<div class="mt">' + (p.category ? esc(p.category) + ' · ' : '') + money(p.price) + ' / ' + unit + ' · เกณฑ์ ' + fmtQty(p.lowStock == null ? 5 : p.lowStock) + '</div>' +
+      '<div class="mt">เหลือ ' + fmtQty(p.stock) + ' ' + unit + ' ' + pill + '</div></div>' +
+      '<div class="qty"><button class="minus" data-act="minus">−</button><span class="n">' + fmtQty(p.stock) + '</span><button class="plus" data-act="plus">+</button></div>' +
+      '</div>';
+  }).join('');
+  Array.prototype.forEach.call($('slist').querySelectorAll('.srow'), function(row){
+    var id = row.getAttribute('data-id');
+    row.querySelector('.minus').onclick = function(ev){ ev.stopPropagation(); quickAdjust(id, -1); };
+    row.querySelector('.plus').onclick = function(ev){ ev.stopPropagation(); quickAdjust(id, 1); };
+    row.querySelector('.l').onclick = function(){ openStockSheet(id); };
+  });
+  renderStockSheet();
+}
+function renderStockSheet(){
+  var p = products.find(function(x){ return x.id === stockTarget; });
+  if (!p) return;
+  $('stTitleTxt').textContent = '📦 ' + p.name;
+  $('stNow').textContent = fmtQty(p.stock) + ' ' + (p.unit || 'ชิ้น');
+}
+function quickAdjust(id, delta){
+  var p = products.find(function(x){ return x.id === id; });
+  if (!p) return;
+  var cur = n2(p.stock);
+  if (cur + delta < 0) { toast('⚠️ สต็อกจะติดลบ — ใช้ช่อง “นับสต็อกใหม่” แทน'); return; }
+  S.adjustStock([{ id: id, qty: Math.abs(delta) }], delta > 0 ? 1 : -1).then(function(){
+    return S.addLog('stock', 'ปรับสต็อก "' + p.name + '" ' + fmtQty(cur) + ' → ' + fmtQty(cur + delta) + ' (' + (delta > 0 ? '+' : '') + fmtQty(delta) + ')');
+  }).catch(function(e){ toast('⚠️ ปรับสต็อกไม่สำเร็จ: ' + e.message); });
+  toast((delta > 0 ? '➕ ' : '➖ ') + p.name + ' ' + (delta > 0 ? '+' : '') + fmtQty(delta));
+}
+
+// ---------- ฟอร์มเพิ่ม / แก้ไขสินค้า ----------
+function resetImgUI(){ $('imgPrev').innerHTML = '📦'; $('btnClearImg').style.display = 'none'; }
+function addImgUI(src){ $('imgPrev').innerHTML = '<img src="' + src + '" alt="" style="width:100%;height:100%;object-fit:cover">'; $('btnClearImg').style.display = ''; }
+function openProductForm(id){
+  editingProduct = id || null;
+  imgData = null;
+  var p = id ? products.find(function(x){ return x.id === id; }) : null;
+  var cats = products.map(function(x){ return x.category; }).filter(Boolean).filter(function(c,i,a){ return a.indexOf(c) === i; });
+  $('catList').innerHTML = cats.map(function(c){ return '<option value="' + esc(c) + '"></option>'; }).join('');
+  $('formTitleTxt').textContent = id ? '✏️ แก้ไขสินค้า' : '➕ เพิ่มสินค้า';
+  $('fName').value = p ? (p.name || '') : '';
+  $('fCat').value = p ? (p.category || '') : '';
+  $('fPrice').value = (p && p.price != null) ? p.price : '';
+  $('fUnit').value = p ? (p.unit || 'ชิ้น') : 'ชิ้น';
+  $('fStock').value = (p && p.stock != null) ? p.stock : '';
+  $('fLow').value = (p && p.lowStock != null) ? p.lowStock : 5;
+  $('fNote').value = p ? (p.note || '') : '';
+  if (p && p.image) addImgUI(esc(p.image)); else resetImgUI();
+  openSheet('Form', true);
+  if (!id) setTimeout(function(){ $('fName').focus(); }, 250);
+}
+function collectProduct(){
+  var name = ($('fName').value || '').replace(/^\s+|\s+$/g, '');
+  if (!name) { toast('⚠️ ต้องใส่ชื่อสินค้า'); $('fName').focus(); return null; }
+  var existingImg = '';
+  if (editingProduct) { var p = products.find(function(x){ return x.id === editingProduct; }); if (p) existingImg = p.image || ''; }
+  return {
+    name: name,
+    category: ($('fCat').value || '').replace(/^\s+|\s+$/g, ''),
+    unit: ($('fUnit').value || '').replace(/^\s+|\s+$/g, '') || 'ชิ้น',
+    price: Math.max(0, n2($('fPrice').value)),
+    stock: Math.max(0, n2($('fStock').value)),
+    lowStock: Math.max(0, parseInt($('fLow').value, 10) || 0),
+    note: ($('fNote').value || '').replace(/^\s+|\s+$/g, ''),
+    image: imgData !== null ? imgData : existingImg
+  };
+}
+function saveProduct(){
+  var data = collectProduct(); if (!data) return;
+  var before = editingProduct ? products.find(function(x){ return x.id === editingProduct; }) : null;
+  var diffs = [];
+  if (before) {
+    if (String(before.name) !== data.name) diffs.push('ชื่อ "' + before.name + '" → "' + data.name + '"');
+    if (n2(before.price) !== data.price) diffs.push('ราคา ' + fmt(before.price) + ' → ' + fmt(data.price));
+    if (n2(before.stock) !== data.stock) diffs.push('สต็อก ' + fmtQty(before.stock) + ' → ' + fmtQty(data.stock));
+    if (String(before.category || '') !== data.category) diffs.push('หมวดหมู่ ' + (before.category || '-') + ' → ' + (data.category || '-'));
+    if (String(before.unit || '') !== data.unit) diffs.push('หน่วย ' + (before.unit || '-') + ' → ' + (data.unit || '-'));
+    if (n2(before.lowStock) !== data.lowStock) diffs.push('เกณฑ์เตือน ' + fmtQty(before.lowStock) + ' → ' + fmtQty(data.lowStock));
+    if (String(before.note || '') !== data.note) diffs.push('หมายเหตุ');
+  }
+  S.saveProduct(data, editingProduct).then(function(){
+    return S.addLog(editingProduct ? 'edit' : 'add',
+      (editingProduct ? 'แก้ไขสินค้า "' : 'เพิ่มสินค้า "') + data.name + '"' +
+      (editingProduct ? '' : ' · สต็อก ' + fmtQty(data.stock) + ' ' + data.unit + ' · ราคา ' + fmt(data.price)) +
+      (diffs.length ? ' — ' + diffs.join(' · ') : ''));
+  }).then(function(){
+    toast(editingProduct ? '✅ แก้ไขสินค้าแล้ว' : '✅ เพิ่มสินค้าแล้ว');
+    openSheet('Form', false);
+  }).catch(function(e){ console.error(e); toast('⚠️ บันทึกไม่สำเร็จ: ' + e.message); });
+}
+
+// ---------- ปรับสต็อก / นับสต็อก ----------
+function openStockSheet(id){
+  var p = products.find(function(x){ return x.id === id; });
+  if (!p) return;
+  stockTarget = id;
+  $('stCount').value = '';
+  $('stNote').value = '';
+  renderStockSheet();
+  openSheet('Stock', true);
+}
+function saveCount(){
+  var p = products.find(function(x){ return x.id === stockTarget; });
+  if (!p) return;
+  var raw = $('stCount').value;
+  if (raw === '' || isNaN(parseFloat(raw))) { toast('⚠️ ใส่จำนวนที่นับได้ก่อน'); $('stCount').focus(); return; }
+  var val = Math.max(0, n2(raw));
+  var cur = n2(p.stock);
+  var note = ($('stNote').value || '').replace(/^\s+|\s+$/g, '');
+  if (val === cur) { toast('จำนวนเท่าเดิม — ไม่มีอะไรเปลี่ยน'); openSheet('Stock', false); return; }
+  S.setStock(stockTarget, val).then(function(){
+    return S.addLog('count', 'นับสต็อก "' + p.name + '": ' + fmtQty(cur) + ' → ' + fmtQty(val) + ' (' + (val > cur ? '+' : '') + fmtQty(val - cur) + ')' + (note ? ' · ' + note : ''));
+  }).then(function(){ toast('✅ บันทึกสต็อกใหม่แล้ว ' + fmtQty(val) + ' ' + (p.unit || 'ชิ้น')); openSheet('Stock', false); })
+    .catch(function(e){ toast('⚠️ บันทึกไม่สำเร็จ: ' + e.message); });
+}
+function deleteProduct(){
+  var p = products.find(function(x){ return x.id === stockTarget; });
+  if (!p) return;
+  if (!confirm('ลบสินค้า "' + p.name + '" ?\n\nแนะนำ: ถ้าแค่เลิกขาย ให้ตั้งสต็อกเป็น 0 แทนการลบ\n(ลบแล้วกู้คืนไม่ได้)')) return;
+  S.deleteProduct(stockTarget).then(function(){ return S.addLog('remove', 'ลบสินค้า "' + p.name + '"'); })
+    .then(function(){ toast('🗑️ ลบสินค้าแล้ว'); openSheet('Stock', false); })
+    .catch(function(e){ toast('⚠️ ลบไม่สำเร็จ: ' + e.message); });
+}
+
+// ---------- รูปสินค้า (บีบอัดก่อนเก็บ) ----------
+$('btnPickImg').onclick = function(){ $('fImg').click(); };
+$('btnClearImg').onclick = function(){ imgData = ''; resetImgUI(); };
+$('fImg').onchange = function(e){
+  var f = e.target.files[0];
+  if (!f) return;
+  var done = false;
+  function finish(bm){
+    if (done) return; done = true;
+    var MAX = 400, w = bm.width, h = bm.height;
+    if (w > h && w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+    else if (h >= w && h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+    var c = document.createElement('canvas'); c.width = w; c.height = h;
+    c.getContext('2d').drawImage(bm, 0, 0, w, h);
+    try { if (bm.close) bm.close(); } catch(e2){}
+    var out = c.toDataURL('image/jpeg', 0.72);
+    if (out.length > 900000) { toast('⚠️ รูปใหญ่เกินไป — ลองรูปที่เล็กลง'); return; }
+    imgData = out; addImgUI(imgData);
+  }
+  function fail(){ if (done) return; done = true; toast('⚠️ อ่านรูปไม่ได้ — ลองเลือกรูปที่เล็กลงหรือรูปใหม่'); }
+  try {
+    createImageBitmap(f).then(finish, function(){
+      var url = URL.createObjectURL(f);
+      var im = new Image();
+      im.onload = function(){ try { URL.revokeObjectURL(url); } catch(e2){} finish(im); };
+      im.onerror = function(){ try { URL.revokeObjectURL(url); } catch(e2){} fail(); };
+      im.src = url;
+    });
+  } catch(er){ fail(); }
+  e.target.value = '';
+};
+
+// ---------- events ของหน้าสินค้า ----------
+$('sq').oninput = function(){ renderStock(); };
+$('ssort').onchange = function(){ sSort = $('ssort').value; renderStock(); };
+$('slowOnly').onchange = function(){ sLowOnly = $('slowOnly').checked; renderStock(); };
+$('btnAddProduct').onclick = function(){ openProductForm(null); };
+$('btnAddFromSell').onclick = function(){ openProductForm(null); };
+$('btnSaveProduct').onclick = saveProduct;
+$('btnCloseForm').onclick = function(){ openSheet('Form', false); };
+$('xForm').onclick = function(){ openSheet('Form', false); };
+$('ovForm').onclick = function(){ openSheet('Form', false); };
+$('xStock').onclick = function(){ openSheet('Stock', false); };
+$('ovStock').onclick = function(){ openSheet('Stock', false); };
+$('btnSaveCount').onclick = saveCount;
+$('btnEditProduct').onclick = function(){ var id = stockTarget; openSheet('Stock', false); openProductForm(id); };
+$('btnDelProduct').onclick = deleteProduct;
+Array.prototype.forEach.call($('qAdjust').querySelectorAll('button'), function(b){
+  b.onclick = function(){
+    quickAdjust(stockTarget, parseFloat(b.getAttribute('data-d')));
+    setTimeout(renderStockSheet, 250);
+  };
+});
 
 // ---------- ประวัติ ----------
 function rangeStart(r){

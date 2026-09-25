@@ -341,7 +341,11 @@ header .sub{opacity:.9;font-size:12px;margin-top:2px}
   </div>
   <button class="btn ghost" id="btnCopy">📋 คัดลอกข้อความใบเสร็จ</button>
   <button class="btn ghost" id="btnPrint">🖨️ พิมพ์ใบเสร็จ</button>
-  <div class="hint-note" id="printHint">💡 <b>เครื่องพิมพ์บ้าน (Epson/HP/Canon ต่อ WiFi):</b> กดพิมพ์แล้วเลือกเครื่องพิมพ์ได้เลย (AirPrint)<br>💡 <b>เครื่องพิมพ์ความร้อน Bluetooth 58/80mm:</b> กดพิมพ์ → เลือก <b>Save to Files</b> เพื่อเก็บเป็น PDF → เปิดแอพของเครื่องพิมพ์ (เช่น <b>PDF Thermal Print</b> ฟรี) แล้วเลือกไฟล์นั้น<br>💡 <b>ไม่มีเครื่องพิมพ์:</b> เลือก Save to Files แล้วส่งไฟล์ PDF ให้ลูกค้าทาง LINE</div>
+  <div class="hint-note" id="printHint">💡 <b>แอพนี้พิมพ์ออกเครื่องพิมพ์เองไม่ได้ตรง ๆ</b> — กดพิมพ์แล้วเลือกวิธีตามเครื่องที่มี:<br>
+    • <b>AirPrint</b> (เครื่องพิมพ์บ้าน Epson/HP/Canon, Star รุ่น AirPrint) → เลือกเครื่องพิมพ์จากหน้าต่างพิมพ์ได้เลย <b>จบในขั้นตอนเดียว</b><br>
+    • <b>เครื่องพิมพ์ความร้อน LAN (ต่อสายแลนเข้าเราเตอร์)</b> → กดพิมพ์ → <b>Save to Files</b> เก็บเป็น PDF → เปิดแอพ <b>BR RawPrinter</b> (ฟรี) → ใส่ IP เครื่องพิมพ์ (เช่น 192.168.1.50) → พิมพ์<br>
+    • <b>เครื่องพิมพ์ความร้อน WiFi</b> (เช่น Xprinter รุ่น WiFi) → เหมือนกัน แต่ใช้แอพของยี่ห้อ เช่น <b>XPrinter</b> ผ่าน WiFi<br>
+    • <b>ยังไม่มีเครื่องพิมพ์</b> → กดพิมพ์ → <b>Save to Files</b> แล้วส่งไฟล์ PDF ให้ลูกค้าทาง LINE ได้เลย</div>
   <button class="btn danger" id="btnVoid" style="display:none">↩️ ยกเลิกบิลนี้ (คืนสต็อก)</button>
 </div>
 

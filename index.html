@@ -176,6 +176,18 @@ header .sub{opacity:.9;font-size:12px;margin-top:2px}
 .sortrow select{flex:1;border:1px solid var(--line);border-radius:99px;background:var(--card);padding:8px 12px;font-size:12.5px;color:var(--text);outline:none;font-family:inherit}
 .sortrow label{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px;white-space:nowrap;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:8px 12px}
 .sortrow label input{width:auto;margin:0}
+/* สรุปแบ่งเดือน */
+.mnav{display:flex;gap:8px;align-items:center;margin:0 0 10px}
+.mselect{flex:1;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:10px 12px;font-size:14px;font-weight:700;color:var(--text);outline:none;font-family:inherit;text-align:center}
+.mrow{display:flex;align-items:center;gap:9px;padding:9px 2px;border-bottom:1px dashed var(--line);font-size:13px;cursor:pointer}
+.mrow:last-child{border-bottom:none}
+.mrow .k{width:62px;font-weight:800;flex-shrink:0}
+.mrow .barw{flex:1;height:9px;background:var(--bg);border-radius:99px;overflow:hidden;min-width:24px}
+.mrow .barw i{display:block;height:100%;background:linear-gradient(90deg,#0f766e,#2dd4bf);border-radius:99px}
+.mrow .v{width:94px;text-align:right;font-weight:800;white-space:nowrap}
+.mrow .n{width:52px;text-align:right;color:var(--muted);font-size:11px;white-space:nowrap}
+.mrow.on{background:#e6f4f2;border-radius:10px;padding-left:6px;padding-right:6px}
+.mrow.now .k{color:var(--primary)}
 
 /* sheets */
 .ov{position:fixed;inset:0;background:rgba(15,23,42,.45);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
@@ -335,6 +347,23 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
     <div class="bars" id="rbars"></div>
     <div class="sect">สินค้าขายดี</div>
     <div class="card" id="rtop"></div>
+
+    <div class="sect">📅 สรุปแบ่งเดือน</div>
+    <div class="mnav">
+      <button class="chip" id="mPrev">‹ เดือนก่อน</button>
+      <select id="mSel" class="mselect"></select>
+      <button class="chip" id="mNext">เดือนถัดไป ›</button>
+    </div>
+    <div class="stats three" id="mStats"></div>
+    <div class="stats" id="mPay"></div>
+    <div id="mCmp"></div>
+    <div class="sect" style="margin-bottom:6px">สินค้าขายดีของเดือนนี้</div>
+    <div class="card" id="mTop"></div>
+    <div class="sect">ยอดขายรายเดือน
+      <button class="chip" id="mLoadAll" style="font-size:11px;padding:5px 10px;float:right">🔄 โหลดเดือนเก่า</button>
+    </div>
+    <div class="card" id="mTable"></div>
+    <div class="hint-note">📅 ยอดแต่ละเดือนคิดจากบิลที่บันทึกไว้จริง (บิลไม่ถูกลบ/ไม่หาย) — แตะชื่อเดือนในตารางเพื่อดูรายละเอียดเดือนนั้น · กด <b>🔄 โหลดเดือนเก่า</b> เพื่อดึงยอดเดือนที่เก่ากว่าที่โหลดไว้ในเครื่อง</div>
   </section>
 
   <!-- ================= ตั้งค่า ================= -->
@@ -505,7 +534,7 @@ var payMethod = 'cash';
 var currentOrder = null;   // บิลที่เปิดดูอยู่
 var filterCat = 'all', hRange = 'today', rRange = 'today';
 var useLocal = !isLive;    // โหมดตัวอย่าง (เก็บใน localStorage)
-var LS = { p: 'pos_products', o: 'pos_orders', s: 'pos_settings' };
+var LS = { p: 'pos_products', o: 'pos_orders', s: 'pos_settings', m: 'pos_months' };
 
 // ---------- utils ----------
 function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -679,7 +708,7 @@ function setLive(){
     'โปรเจกต์: <b>' + esc(isLive ? cfg.projectId : '—') + '</b><br>' +
     'สินค้า: <b>' + products.length + '</b> รายการ · บิล: <b>' + orders.length + '</b> ใบ';
 }
-function renderAll(){ renderHead(); renderCats(); renderProducts(); renderCart(); renderStock(); renderWholesale(); renderHistory(); renderReport(); renderSettings(); setLive(); }
+function renderAll(){ renderHead(); renderCats(); renderProducts(); renderCart(); renderStock(); renderWholesale(); renderHistory(); renderReport(); renderMonthReport(); renderSettings(); setLive(); }
 function renderHead(){
   $('shopName').textContent = settings.shopName || 'ร้านของฉัน';
   var t = todayStats();
@@ -905,6 +934,7 @@ function checkout(){
   S.saveOrder(order).then(function(newId){
     S.saveSettings({ lastNo: order.no, lastNoDay: order.dayKey }).catch(function(){});
     toast('✅ บันทึกการขายแล้ว ' + money(order.total));
+    invalidateMonth(order.atLocal || Date.now());
     cart = {}; $('discount').value = ''; $('received').value = ''; $('gotPaid').checked = false;
     openSheet('Cart', false);
     currentOrder = Object.assign({ id: newId || null }, order);
@@ -1238,6 +1268,24 @@ $('btnAddProduct').onclick = function(){ openProductForm(null); };
 $('btnAddFromSell').onclick = function(){ openProductForm(null); };
 $('btnAddFromWs').onclick = function(){ openProductForm(null); };
 $('wq').oninput = function(){ renderWholesale(); };
+// สรุปแบ่งเดือน
+$('mSel').onchange = function(){ mSel = $('mSel').value; renderMonthReport(); };
+$('mPrev').onclick = function(){ mSel = shiftMonth(mSel || currentMonthKey(), -1); renderMonthReport(); };
+$('mNext').onclick = function(){ mSel = shiftMonth(mSel || currentMonthKey(), 1); renderMonthReport(); };
+$('mLoadAll').onclick = function(){
+  var todo = monthList().filter(function(k){ return !monthAgg(k); });
+  if (useLocal) { toast('โหมดตัวอย่าง — ยอดในเครื่องครบอยู่แล้ว'); return; }
+  if (mLoadingAll) { toast('⏳ กำลังโหลดอยู่…'); return; }
+  if (!todo.length) { toast('✅ โหลดยอดทุกเดือนแล้ว'); return; }
+  mLoadingAll = true;
+  var total = todo.length;
+  toast('⏳ กำลังโหลดยอด ' + total + ' เดือน…');
+  (function next(){
+    var k = todo.shift();
+    if (!k) { mLoadingAll = false; renderMonthReport(); toast('✅ โหลดยอดรายเดือนครบแล้ว ' + total + ' เดือน'); return; }
+    fetchMonth(k, function(){ next(); });
+  })();
+};
 $('btnSaveProduct').onclick = saveProduct;
 $('btnCloseForm').onclick = function(){ openSheet('Form', false); };
 $('xForm').onclick = function(){ openSheet('Form', false); };
@@ -1363,6 +1411,7 @@ function voidOrder(){
   }
   chain.then(function(){ return S.adjustStock(o.items, +1); })
   .then(function(){
+    invalidateMonth(o.atLocal || o.at);
     toast('↩️ ยกเลิกบิลแล้ว · คืนสต็อกแล้ว');
     currentOrder = Object.assign({}, o, { status: 'void' });
     showOrder(currentOrder, false);
@@ -1423,6 +1472,178 @@ function renderReport(){
   }).join('') : '<div class="empty" style="padding:14px">ยังไม่มีการขายในช่วงนี้</div>';
 }
 
+// ---------- สรุปแบ่งเดือน ----------
+var TH_MON = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+var HIST_LIMIT = 400;          // ต้องตรงกับ .limit() ของ db.collection('orders')
+var mSel = '', monthData = {}, monthPending = {}, monthFail = {}, mLoadingAll = false;
+
+function monthKeyOf(ms){
+  var p = new Intl.DateTimeFormat('en-US', { timeZone: TZ, year: 'numeric', month: '2-digit' }).formatToParts(new Date(ms));
+  var y = '', m = '';
+  p.forEach(function(x){ if (x.type === 'year') y = x.value; if (x.type === 'month') m = x.value; });
+  return y + '-' + m;
+}
+function currentMonthKey(){ return monthKeyOf(Date.now()); }
+function monthLabel(key){
+  return TH_MON[parseInt(key.slice(5,7),10) - 1] + ' ' + (parseInt(key.slice(0,4),10) + 543);
+}
+function monthShort(key){
+  var y = parseInt(key.slice(0,4),10);
+  return TH_MON[parseInt(key.slice(5,7),10) - 1].slice(0,3) + ' ' + String(y + 543).slice(2);
+}
+function shiftMonth(key, delta){
+  var y = parseInt(key.slice(0,4),10), m = parseInt(key.slice(5,7),10) - 1 + delta;
+  var yy = y + Math.floor(m / 12), mm = ((m % 12) + 12) % 12;
+  return yy + '-' + ('0' + (mm + 1)).slice(-2);
+}
+function monthBounds(key){
+  var y = parseInt(key.slice(0,4),10), m = parseInt(key.slice(5,7),10) - 1;
+  return { start: Date.UTC(y, m, 1) - 7*3600000, end: Date.UTC(m === 11 ? y + 1 : y, (m + 1) % 12, 1) - 7*3600000 };
+}
+function monthList(){
+  var set = {}, k = currentMonthKey();
+  for (var i = 0; i < 12; i++) { set[k] = 1; k = shiftMonth(k, -1); }
+  orders.forEach(function(o){ set[monthKeyOf(toMs(o.at))] = 1; });
+  Object.keys(monthData).forEach(function(x){ set[x] = 1; });
+  return Object.keys(set).sort().reverse();
+}
+function aggFrom(list){
+  var a = { total: 0, count: 0, cash: 0, transfer: 0, voidCount: 0, voidTotal: 0, qty: 0, items: {}, first: 0, last: 0 };
+  (list || []).forEach(function(o){
+    var t = n2(o.total), ms = toMs(o.at);
+    if (!a.first || ms < a.first) a.first = ms;
+    if (ms > a.last) a.last = ms;
+    if (o.status === 'void') { a.voidCount++; a.voidTotal += t; return; }
+    a.total += t; a.count++;
+    if (o.pay && o.pay.method === 'transfer') a.transfer += t; else a.cash += t;
+    (o.items || []).forEach(function(i){
+      a.qty += n2(i.qty);
+      var k = i.name || '-';
+      a.items[k] = a.items[k] || { q: 0, amt: 0, unit: i.unit || '' };
+      a.items[k].q += n2(i.qty); a.items[k].amt += n2(i.price) * n2(i.qty);
+    });
+  });
+  return a;
+}
+function monthFromMemory(key){
+  var list = orders.filter(function(o){ return monthKeyOf(toMs(o.at)) === key; });
+  var a = aggFrom(list);
+  a.complete = monthComplete(key);
+  return a;
+}
+// เดือนนี้ “ครบ” ไหม — ถ้าบิลที่โหลดไว้ยังไม่ถึงต้นเดือน = หน้าต่างโหลดถูกตัดกลางเดือน ต้องดึงจากเซิร์ฟเวอร์
+function monthComplete(key){
+  if (useLocal) return true;
+  if (orders.length < HIST_LIMIT) return true;           // โหลดบิลมาไม่เต็มโควตา = มีครบทุกใบ
+  if (!orders.length) return false;
+  var oldest = toMs(orders[orders.length - 1].at);        // เรียงใหม่→เก่า
+  return oldest <= monthBounds(key).start;
+}
+function monthAgg(key){
+  var a = monthFromMemory(key);
+  if (a.complete) return a;
+  if (monthData[key] && monthData[key].complete) return monthData[key];
+  return null;
+}
+function saveMonthCache(){
+  try {
+    var o = {}, nowKey = currentMonthKey();
+    Object.keys(monthData).forEach(function(k){
+      var d = monthData[k];
+      if (!d || !d.complete || k === nowKey) return;      // เดือนปัจจุบันต้องสดเสมอ ไม่เก็บลง cache
+      o[k] = { total: d.total, count: d.count, cash: d.cash, transfer: d.transfer,
+               voidCount: d.voidCount, voidTotal: d.voidTotal, qty: d.qty,
+               items: d.items, first: d.first, last: d.last, complete: true };
+    });
+    localStorage.setItem(LS.m, JSON.stringify(o));
+  } catch(e){}
+}
+function loadMonthCache(){
+  try { monthData = JSON.parse(localStorage.getItem(LS.m) || '{}') || {}; } catch(e){ monthData = {}; }
+}
+function fetchMonth(key, cb){
+  if (useLocal || monthPending[key] || monthFail[key]) { cb(null); return; }
+  monthPending[key] = true;
+  var b = monthBounds(key);
+  try {
+    var T = firebase.firestore.Timestamp;
+    db.collection('orders')
+      .where('at', '>=', T.fromMillis(b.start))
+      .where('at', '<', T.fromMillis(b.end))
+      .get()
+      .then(function(snap){
+        var list = snap.docs.map(function(d){ var x = d.data(); x.id = d.id; return x; });
+        monthData[key] = Object.assign(aggFrom(list), { complete: true });
+        saveMonthCache(); delete monthPending[key]; cb(null);
+      }, function(e){ delete monthPending[key]; monthFail[key] = true; cb(e); });
+  } catch(e){ delete monthPending[key]; monthFail[key] = true; cb(e); }
+}
+function invalidateMonth(ms){
+  var k = monthKeyOf(toMs(ms));
+  if (monthData[k]) { delete monthData[k]; saveMonthCache(); }
+  delete monthFail[k];
+}
+function renderMonthReport(){
+  if (!$('mSel')) return;
+  var months = monthList();
+  if (!mSel || months.indexOf(mSel) < 0) mSel = months[0] || currentMonthKey();
+  var opts = months.map(function(k){ return '<option value="' + k + '"' + (k === mSel ? ' selected' : '') + '>' + monthLabel(k) + '</option>'; });
+  if ($('mSel').innerHTML !== opts.join('')) $('mSel').innerHTML = opts.join('');
+  var a = monthAgg(mSel), prevKey = shiftMonth(mSel, -1), prev = monthAgg(prevKey);
+  if (!a && monthFail[mSel]) {
+    $('mStats').innerHTML = '<div class="stat" style="grid-column:1/-1"><div class="v amber">⚠️</div><div class="l">โหลดยอดเดือน ' + monthLabel(mSel) + ' ไม่สำเร็จ<br><button class="chip" id="mRetry" style="margin-top:8px;padding:7px 12px">🔄 ลองใหม่</button></div></div>';
+    $('mPay').innerHTML = ''; $('mCmp').innerHTML = ''; $('mTop').innerHTML = '';
+    $('mRetry').onclick = function(){ delete monthFail[mSel]; renderMonthReport(); };
+  } else if (!a) {
+    $('mStats').innerHTML = '<div class="stat" style="grid-column:1/-1"><div class="v blue">⏳</div><div class="l">กำลังโหลดยอดเดือน ' + monthLabel(mSel) + '…</div></div>';
+    $('mPay').innerHTML = ''; $('mCmp').innerHTML = ''; $('mTop').innerHTML = '';
+    fetchMonth(mSel, function(){ renderMonthReport(); });
+  } else {
+    $('mStats').innerHTML =
+      '<div class="stat"><div class="v green">' + fmt(a.total) + '</div><div class="l">ยอดขายเดือนนี้ (บาท)</div></div>' +
+      '<div class="stat"><div class="v blue">' + a.count + '</div><div class="l">จำนวนบิล</div></div>' +
+      '<div class="stat"><div class="v amber">' + fmt(a.count ? a.total / a.count : 0) + '</div><div class="l">เฉลี่ย/บิล</div></div>';
+    $('mPay').innerHTML =
+      '<div class="stat"><div class="v">' + fmt(a.cash) + '</div><div class="l">💵 เงินสด</div></div>' +
+      '<div class="stat"><div class="v">' + fmt(a.transfer) + '</div><div class="l">📱 โอน / พร้อมเพย์</div></div>';
+    var cmp = '';
+    if (prev && prev.complete) {
+      var d = n2(a.total) - n2(prev.total);
+      var pct = n2(prev.total) > 0 ? Math.round(d / n2(prev.total) * 100) : 0;
+      var col = d > 0 ? 'var(--ok)' : (d < 0 ? 'var(--out)' : 'var(--muted)');
+      cmp = '<div class="hint-note" style="margin-top:10px">เทียบเดือน ' + monthLabel(prevKey) + ': <b style="color:' + col + '">' +
+        (d > 0 ? '+' : '') + fmt(d) + ' บาท' + (n2(prev.total) > 0 ? ' (' + (d > 0 ? '+' : '') + pct + '%)' : '') + '</b>' +
+        ' · เดือนก่อน ' + money(prev.total) + ' · ' + prev.count + ' บิล</div>';
+    } else if (prevKey) {
+      cmp = '<div class="hint-note" style="margin-top:10px">ยังไม่มียอดเดือน ' + monthLabel(prevKey) + ' ในเครื่อง — กด <b>🔄 โหลดเดือนเก่า</b> ด้านล่างเพื่อดึงมาเทียบ</div>';
+    }
+    if (a.voidCount) cmp += '<div class="hint-note" style="margin-top:8px;color:var(--out)">⚠️ มีบิลยกเลิกในเดือนนี้ ' + a.voidCount + ' ใบ · ' + money(a.voidTotal) + ' (ไม่นับในยอดขาย)</div>';
+    if (a.qty) cmp += '<div class="hint-note" style="margin-top:8px">ขายได้รวม ' + fmtQty(a.qty) + ' หน่วย' + (a.last ? ' · บิลล่าสุด ' + thaiDateTime(a.last) : '') + '</div>';
+    $('mCmp').innerHTML = cmp;
+    var top = Object.keys(a.items).map(function(k){ return { name: k, q: a.items[k].q, amt: a.items[k].amt, unit: a.items[k].unit }; })
+      .sort(function(x,y){ return y.q - x.q; }).slice(0, 6);
+    $('mTop').innerHTML = top.length ? top.map(function(t2, idx){
+      return '<div class="toprow"><span>' + (idx+1) + '.</span><span class="nm">' + esc(t2.name) + '</span><span class="q">' + fmtQty(t2.q) + ' ' + esc(t2.unit) + '</span><span style="color:var(--muted);width:82px;text-align:right">' + money(t2.amt) + '</span></div>';
+    }).join('') : '<div class="empty" style="padding:14px">เดือนนี้ยังไม่มีการขาย</div>';
+  }
+  updateMonthTable();
+}
+function updateMonthTable(){
+  if (!$('mTable')) return;
+  var months = monthList(), max = 1, nowKey = currentMonthKey();
+  months.forEach(function(k){ var a = monthAgg(k); if (a && n2(a.total) > max) max = n2(a.total); });
+  $('mTable').innerHTML = months.map(function(k){
+    var a = monthAgg(k), on = (k === mSel ? ' on' : '') + (k === nowKey ? ' now' : '');
+    var bar = a ? '<div class="barw"><i style="width:' + Math.max(2, Math.round(n2(a.total) / max * 100)) + '%"></i></div>' : '<div class="barw"></div>';
+    var v = a ? '฿' + fmt(a.total) : '—';
+    var n = a ? (a.count || a.voidCount ? a.count + ' บิล' : '') : 'กดเพื่อโหลด';
+    return '<div class="mrow' + on + '" data-key="' + k + '"><span class="k">' + monthShort(k) + '</span>' + bar + '<span class="v">' + v + '</span><span class="n">' + n + '</span></div>';
+  }).join('');
+  Array.prototype.forEach.call($('mTable').querySelectorAll('.mrow'), function(r){
+    r.onclick = function(){ mSel = r.getAttribute('data-key'); renderMonthReport(); };
+  });
+}
+
 // ---------- ตั้งค่า ----------
 function renderSettings(){
   var f = document.activeElement;
@@ -1468,6 +1689,7 @@ function deleteBill(){
   chain.then(function(){
     return S.addLog('delete', 'ลบบิล ' + o.no + ' · ' + itemsSummary(o.items) + ' · ' + money(o.total) + (needRestore ? ' · คืนสต็อก' : ' · (ยกเลิกอยู่แล้ว)'));
   }).then(function(){
+    invalidateMonth(o.atLocal || o.at);
     toast('🗑️ ลบบิลแล้ว' + (needRestore ? ' · คืนสต็อกแล้ว' : ''));
     openSheet('Order', false);
   }).catch(function(e){ toast('⚠️ ลบไม่สำเร็จ: ' + e.message); });
@@ -1624,6 +1846,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tabbar button'), functi
 
 // ---------- start ----------
 (function init(){
+  loadMonthCache();
   // แถบตะกร้าแบบลอย
   var bar = document.createElement('div');
   bar.className = 'cartbar hide'; bar.id = 'cartbar';

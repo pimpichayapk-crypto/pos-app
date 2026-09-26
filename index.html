@@ -273,7 +273,7 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
   <div class="banner err" id="errBanner"></div>
 
   <!-- ================= ขาย ================= -->
-  <section class="view on" id="viewSell">
+  <section class="view" id="viewSell">
     <div class="toolbar">
       <div class="searchwrap"><span class="ic">🔍</span><input id="q" type="search" placeholder="ค้นหาสินค้า / รหัส"></div>
       <button class="chip" id="btnClearCart" style="padding:11px 14px">🧹 ล้างตะกร้า</button>
@@ -284,7 +284,7 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
   </section>
 
   <!-- ================= สินค้า / สต็อก ================= -->
-  <section class="view" id="viewStock">
+  <section class="view on" id="viewStock">
     <div class="stats three" id="stStats"></div>
     <div class="toolbar">
       <div class="searchwrap"><span class="ic">🔍</span><input id="sq" type="search" placeholder="ค้นหาชื่อสินค้า / หมวดหมู่ / หมายเหตุ"></div>
@@ -426,9 +426,9 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
 </div>
 
 <nav class="tabbar">
-  <button data-view="Sell" class="on"><span class="ic">🛒</span>ขาย</button>
-  <button data-view="Stock"><span class="ic">📦</span>สินค้า</button>
-  <button data-view="Wholesale"><span class="ic">🏷️</span>ราคาส่ง</button>
+  <button data-view="Stock" class="on"><span class="ic">📦</span>สินค้า</button>
+  <button data-view="Sell"><span class="ic">🛒</span>ปลีก</button>
+  <button data-view="Wholesale"><span class="ic">🏷️</span>ส่ง</button>
   <button data-view="History"><span class="ic">🧾</span>ประวัติ</button>
   <button data-view="Report"><span class="ic">📊</span>สรุป</button>
   <button data-view="Settings"><span class="ic">⚙️</span>ตั้งค่า</button>
@@ -896,7 +896,7 @@ function checkout(){
   var rec = payMethod === 'cash' ? n2($('received').value) : t.total;
   var order = {
     no: id.no, seq: id.seq, dayKey: id.dayKey,
-    items: t.items.map(function(i){ return { id: i.id, name: i.name, unit: i.unit, price: i.price, qty: i.qty }; }),
+    items: t.items.map(function(i){ return { id: i.id, name: i.name, unit: i.unit, price: i.price, listPrice: i.listPrice, qty: i.qty, wholesale: !!i.wholesale, wholesaleMin: i.wholesaleMin }; }),
     subtotal: t.sub, discount: t.disc, total: t.total,
     pay: { method: payMethod, received: rec, change: n2(rec - t.total) },
     seller: settings.seller || '', status: 'paid', atLocal: Date.now(), at: Date.now()
@@ -920,8 +920,8 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var currentView = 'Sell';
-var VIEW_NAMES = { Sell: '🛒 หน้าขาย', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ สินค้าราคาส่ง', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
+var currentView = 'Stock';
+var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ส่ง', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }
 
 function stockStats(){
@@ -1304,7 +1304,9 @@ function renderHistory(){
 function receiptHTML(o){
   var isVoid = o.status === 'void';
   var rows = (o.items||[]).map(function(i){
-    return '<tr><td>' + esc(i.name) + '<br><span style="color:#64748b;font-size:11px">' + fmtQty(i.qty) + ' × ' + fmt(i.price) + '</span></td><td class="r">' + fmt(i.price * i.qty) + '</td></tr>';
+    var tag = i.wholesale ? ' <span style="font-size:10px;font-weight:800;color:#92400e;background:#fef3c7;border-radius:99px;padding:1px 6px">ราคาส่ง</span>' : '';
+    var from = (i.wholesale && n2(i.listPrice) > n2(i.price)) ? ' · จาก ' + fmt(i.listPrice) : '';
+    return '<tr><td>' + esc(i.name) + tag + '<br><span style="color:#64748b;font-size:11px">' + fmtQty(i.qty) + ' × ' + fmt(i.price) + from + '</span></td><td class="r">' + fmt(i.price * i.qty) + '</td></tr>';
   }).join('');
   var payTxt = o.pay && o.pay.method === 'transfer' ? 'โอน / พร้อมเพย์' : 'เงินสด';
   var h = '<div class="receipt"><div class="ctr"><div class="shop">' + esc(settings.shopName || 'ร้านของฉัน') + '</div>' +

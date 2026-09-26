@@ -61,6 +61,8 @@ header .sub{opacity:.9;font-size:12px;margin-top:2px}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex-shrink:0;border:1px solid var(--line);background:var(--card);color:var(--muted);padding:7px 13px;border-radius:99px;font-size:12.5px;cursor:pointer;font-weight:700;white-space:nowrap;font-family:inherit}
 .chip.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.chip .cnt{display:inline-block;margin-left:6px;background:rgba(15,23,42,.10);border-radius:99px;padding:0 6px;font-size:11px;font-weight:800}
+.chip.active .cnt{background:rgba(255,255,255,.3)}
 
 /* product grid */
 .grid{display:block}
@@ -401,6 +403,7 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
     <div class="fld" style="flex:1"><label>ราคาโหล/หน่วย (ไม่ใส่ก็ได้)</label><input id="fWPrice" inputmode="decimal" placeholder="เช่น 95"></div>
     <div class="fld" style="flex:1"><label>ซื้อขั้นต่ำกี่หน่วยจึงได้ราคาโหล</label><input id="fWMin" inputmode="numeric" placeholder="12" value="12"></div>
   </div>
+  <div class="hint" style="margin:-2px 0 6px">💡 ใส่ราคาโหลแล้ว สินค้านั้นจะถูกจัดอยู่ในหมวด <b>💰 ราคาโหล</b> ให้อัตโนมัติ — ดูง่ายทั้งหน้าขายและหน้าสินค้า</div>
   <div style="display:flex;gap:8px">
     <div class="fld" style="flex:1"><label>จำนวนสต็อก</label><input id="fStock" inputmode="decimal" placeholder="0"></div>
     <div class="fld" style="flex:1"><label>เกณฑ์เตือนใกล้หมด</label><input id="fLow" inputmode="numeric" value="5"></div>
@@ -894,6 +897,8 @@ function renderStockCats(){
   var cats = products.map(function(p){ return p.category; }).filter(Boolean)
     .filter(function(c,i,a){ return a.indexOf(c) === i; }).sort();
   var html = '<button class="chip' + (sCat === 'all' ? ' active' : '') + '" data-cat="all">ทั้งหมด</button>';
+  var nWs = products.filter(function(p){ return n2(p.wholesalePrice) > 0; }).length;
+  if (nWs) html += '<button class="chip' + (sCat === '__w' ? ' active' : '') + '" data-cat="__w">💰 ราคาโหล<span class="cnt">' + nWs + '</span></button>';
   cats.forEach(function(c){ html += '<button class="chip' + (sCat === c ? ' active' : '') + '" data-cat="' + esc(c) + '">' + esc(c) + '</button>'; });
   $('scats').innerHTML = html;
   Array.prototype.forEach.call($('scats').querySelectorAll('.chip'), function(b){
@@ -903,7 +908,8 @@ function renderStockCats(){
 function sortedStock(){
   var q = ($('sq').value || '').trim().toLowerCase();
   var list = products.filter(function(p){
-    if (sCat !== 'all' && p.category !== sCat) return false;
+    if (sCat === '__w') { if (!(n2(p.wholesalePrice) > 0)) return false; }
+    else if (sCat !== 'all' && p.category !== sCat) return false;
     if (sLowOnly) { var sc = stockClass(p); if (sc !== 'low' && sc !== 'out') return false; }
     if (!q) return true;
     return String(p.name || '').toLowerCase().indexOf(q) >= 0

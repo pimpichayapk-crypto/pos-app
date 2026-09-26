@@ -194,13 +194,6 @@ header .sub{opacity:.9;font-size:12px;margin-top:2px}
 .orow .oLabel{flex:1}
 .orow .oDel{border:none;background:#fdecef;color:#e5484d;width:34px;height:38px;border-radius:11px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;flex-shrink:0}
 .opts{font-size:11.5px;color:#1d4ed8;background:#eff6ff;border-radius:9px;padding:3px 8px;margin-top:5px;font-weight:700;display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pickrow{display:flex;align-items:center;gap:9px;padding:10px 0;border-bottom:1px dashed var(--line)}
-.pickrow:last-child{border-bottom:none}
-.pickrow .l{flex:1;min-width:0}
-.pickrow .nm{font-weight:800;font-size:14px}
-.pickrow .cd{font-size:11.5px;color:var(--muted);margin-top:2px}
-.pickrow .cd b{color:var(--text);background:var(--bg);border-radius:6px;padding:1px 6px}
-.pickrow.none .nm{color:var(--muted);font-weight:700;font-size:13px}
 
 /* sheets */
 .ov{position:fixed;inset:0;background:rgba(15,23,42,.45);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
@@ -474,14 +467,6 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
   <button data-view="Settings"><span class="ic">⚙️</span>ตั้งค่า</button>
 </nav>
 
-<div class="ov" id="ovPick"></div>
-<div class="sheet" id="sheetPick">
-  <h2><span id="pickTitle">🏷️ เลือกสี / รหัส</span> <button class="x" id="xPick">✕</button></h2>
-  <div class="totline"><span>สต็อกคงเหลือ (รวมทุกสี)</span><span class="r" id="pickStock">0</span></div>
-  <div id="pickList"></div>
-  <div class="hint-note" id="pickNote"></div>
-  <button class="btn" id="btnPickDone">✅ เสร็จแล้ว</button>
-</div>
 
 <div class="ov" id="ovForm"></div>
 <div class="sheet" id="sheetForm">
@@ -734,7 +719,7 @@ function setLive(){
     'โปรเจกต์: <b>' + esc(isLive ? cfg.projectId : '—') + '</b><br>' +
     'สินค้า: <b>' + products.length + '</b> รายการ · บิล: <b>' + orders.length + '</b> ใบ';
 }
-function renderAll(){ renderHead(); renderCats(); renderProducts(); renderCart(); renderStock(); renderWholesale(); renderPick(); renderHistory(); renderReport(); renderMonthReport(); renderSettings(); setLive(); }
+function renderAll(){ renderHead(); renderCats(); renderProducts(); renderCart(); renderStock(); renderWholesale(); renderHistory(); renderReport(); renderMonthReport(); renderSettings(); setLive(); }
 function renderHead(){
   $('shopName').textContent = settings.shopName || 'ร้านของฉัน';
   var t = todayStats();
@@ -783,46 +768,37 @@ function renderProducts(){
     var wInfo = n2(p.wholesalePrice) > 0
       ? '<div class="band-ws">🏷️ ราคาส่ง ' + money(p.wholesalePrice) + ' · ตั้งแต่ ' + fmtQty(wholesaleMinOf(p)) + ' ' + esc(p.unit || 'ชิ้น') + (ep.wholesale ? ' ✅ ใช้ราคาส่งแล้ว' : '') + '</div>'
       : '';
-    var oInfo = hasOptions(p) ? '<div class="opts">🏷️ ' + optionChips(p) + ' · ' + optionsOf(p).length + ' รหัส</div>' : '';
-    var qtyBar = '';
-    if (hasOptions(p)) {
-      if (q > 0) qtyBar = '<div class="pqty"><span class="qnum">ในตะกร้า ' + fmtQty(q) + '</span><span class="sp"></span><button class="qdel" data-act="pick">🏷️ แก้สี / จำนวน</button></div>';
-    } else if (q > 0) {
-      qtyBar = '<div class="pqty" data-qty="1">' +
+    var qtyBar = q > 0
+      ? '<div class="pqty" data-qty="1">' +
           '<button class="qbtn minus" data-act="minus" aria-label="ลด">−</button>' +
           '<span class="qnum">' + fmtQty(q) + '</span>' +
           '<button class="qbtn plus" data-act="plus" aria-label="เพิ่ม">+</button>' +
           '<span class="sp"></span>' +
           '<button class="qdel" data-act="del">ลบออก</button>' +
-        '</div>';
-    }
+        '</div>'
+      : '';
     return '<div class="pbtn' + (q > 0 ? ' in-cart' : '') + (n2(p.wholesalePrice) > 0 ? ' ws' : '') + '" data-id="' + esc(p.id) + '">' +
       '<div class="ptop"><span class="pico">' + ic + '</span>' +
-      '<span class="body"><span class="nm">' + esc(p.name) + (n2(p.wholesalePrice) > 0 ? '<span class="tag-ws">🏷️ ราคาส่ง</span>' : '') + (hasOptions(p) ? '<span class="tag-ws" style="background:#dbeafe;color:#1e40af">🏷️ เลือกสี</span>' : '') + '</span>' +
-      '<span class="pr">' + money(p.price) + '</span> <span class="st ' + sc + '">' + st + '</span>' + oInfo + wInfo + '</span></div>' + qtyBar + '</div>';
+      '<span class="body"><span class="nm">' + esc(p.name) + (n2(p.wholesalePrice) > 0 ? '<span class="tag-ws">🏷️ ราคาส่ง</span>' : '') + '</span>' +
+      '<span class="pr">' + money(p.price) + '</span> <span class="st ' + sc + '">' + st + '</span>' + wInfo + '</span></div>' + qtyBar + '</div>';
   }).join('');
   Array.prototype.forEach.call($('pgrid').querySelectorAll('.pbtn'), function(card){
     var id = card.getAttribute('data-id');
-    var prod = products.find(function(x){ return x.id === id; });
     card.onclick = function(ev){
       var t = ev.target;
-      if (t && t.closest && t.closest('[data-act]')) return;
-      if (hasOptions(prod)) openPick(id); else addToCart(id);
+      if (t && t.closest && (t.closest('.qbtn.minus') || t.closest('.qdel'))) return;
+      addToCart(id);
     };
-    Array.prototype.forEach.call(card.querySelectorAll('[data-act]'), function(b){
-      var act = b.getAttribute('data-act');
-      b.onclick = function(ev){
-        ev.stopPropagation();
-        if (act === 'minus') { var q = n2(cart[id]); setQty(id, q - 1); toast(q - 1 <= 0 ? '🗑️ เอาออกจากตะกร้าแล้ว' : '➖ ' + fmtQty(q - 1) + ' ชิ้น'); }
-        else if (act === 'plus') addToCart(id);
-        else if (act === 'del') { setQty(id, 0); toast('🗑️ เอาออกจากตะกร้าแล้ว'); }
-        else if (act === 'pick') openPick(id);
-      };
-    });
+    var minus = card.querySelector('.qbtn.minus'), plus = card.querySelector('.qbtn.plus'), del = card.querySelector('.qdel');
+    if (minus) minus.onclick = function(ev){ ev.stopPropagation(); var q = n2(cart[id]); setQty(id, q - 1); toast(q - 1 <= 0 ? '🗑️ เอาออกจากตะกร้าแล้ว' : '➖ ' + fmtQty(q - 1) + ' ชิ้น'); };
+    if (plus) plus.onclick = function(ev){ ev.stopPropagation(); addToCart(id); };
+    if (del) del.onclick = function(ev){ ev.stopPropagation(); setQty(id, 0); toast('🗑️ เอาออกจากตะกร้าแล้ว'); };
   });
 }
 
 // ---------- รหัสสินค้า / ตัวเลือก (หลายสี หลายรหัส) ----------
+// หมายเหตุ: ตัวเลือกใช้ “บันทึก/แสดงในหมวดสินค้า” เท่านั้น — ตอนขายแตะสินค้า = ลงตะกร้าเลย ไม่มีหน้าต่างให้เลือก
+// (ถ้าต้องการให้เลือกสีตอนขายกลับมา: เพิ่ม sheet + ปุ่มเรียก openPick แล้วให้ addToCart(id, code) อีกครั้ง)
 function optionsOf(p){ return (p && p.options && p.options.length) ? p.options : []; }
 function hasOptions(p){ return optionsOf(p).length > 0; }
 function optionOf(p, code){
@@ -857,40 +833,6 @@ function optionChips(p){
     return esc(o.label || o.code || '-') + (o.label && o.code ? ' (' + esc(o.code) + ')' : '');
   }).join(' · ');
 }
-// ---------- หน้าต่างเลือกสี / รหัส ก่อนลงตะกร้า ----------
-var pickTarget = null;
-function openPick(id){ pickTarget = id; renderPick(); openSheet('Pick', true); }
-function closePick(){ openSheet('Pick', false); }
-function renderPick(){
-  if (!$('pickList') || !pickTarget) return;
-  var p = products.find(function(x){ return x.id === pickTarget; });
-  if (!p) { closePick(); return; }
-  var unit = esc(p.unit || 'ชิ้น');
-  var q = cartQtyOfProduct(p.id), ep = effectivePrice(p, q);
-  $('pickTitle').textContent = '🏷️ เลือกสี / รหัส — ' + p.name;
-  $('pickStock').textContent = fmtQty(p.stock) + ' ' + unit;
-  function rowOf(key, label, code, cls){
-    var n = n2(cart[key]);
-    return '<div class="pickrow' + (cls || '') + '" data-key="' + esc(key) + '">' +
-      '<div class="l"><div class="nm">' + label + '</div>' +
-      '<div class="cd">' + (code ? 'รหัส <b>' + code + '</b>' : 'ไม่ระบุรหัส') + (n > 0 ? ' · ในตะกร้า ' + fmtQty(n) + ' ' + unit : '') + '</div></div>' +
-      '<div class="qty"><button class="minus" data-act="minus">−</button><span class="n">' + fmtQty(n) + '</span><button class="plus" data-act="plus">+</button></div></div>';
-  }
-  var rows = optionsOf(p).map(function(o){
-    return rowOf(optKey(p.id, o.code), esc(o.label || o.code || '-'), esc(o.code || ''), '');
-  }).join('');
-  rows += rowOf(p.id, '— ไม่ระบุสี / รหัส —', '', ' none');
-  $('pickList').innerHTML = rows;
-  var note = 'ราคา ' + money(p.price) + ' / ' + unit + (ep.wholesale ? ' · ✅ ใช้ราคาส่งแล้ว (รวมทุกสี ' + fmtQty(q) + ' ' + unit + ')' : '');
-  if (n2(p.wholesalePrice) > 0) note += '<br>🏷️ ครบ ' + fmtQty(wholesaleMinOf(p)) + ' ' + unit + ' (นับรวมทุกสี) = ' + money(p.wholesalePrice) + ' / ' + unit;
-  note += '<br>กด <b>+</b> เพื่อใส่สีนั้นลงตะกร้า · ปิดหน้าต่างนี้ได้เลยของอยู่ในตะกร้าแล้ว';
-  $('pickNote').innerHTML = note;
-  Array.prototype.forEach.call($('pickList').querySelectorAll('.pickrow'), function(row){
-    var key = row.getAttribute('data-key');
-    row.querySelector('.minus').onclick = function(){ var n = n2(cart[key]); setQty(key, n - 1); toast(n - 1 <= 0 ? '🗑️ เอาออกจากตะกร้าแล้ว' : '➖ ' + fmtQty(n - 1) + ' ' + unit); };
-    row.querySelector('.plus').onclick = function(){ var s = splitKey(key); addToCart(s.id, s.code); };
-  });
-}
 function addToCart(id, code){
   var p = products.find(function(x){ return x.id === id; });
   if (!p) return;
@@ -899,7 +841,7 @@ function addToCart(id, code){
     if (!confirm('“' + optLineName(p, code) + '” เหลือสต็อก ' + fmtQty(p.stock) + ' ' + (p.unit||'ชิ้น') + '\nขายเกินสต็อกหรือไม่?')) return;
   }
   cart[key] = cur + 1;
-  renderProducts(); renderWholesale(); renderCart(); renderPick(); updateCartBar();
+  renderProducts(); renderWholesale(); renderCart(); updateCartBar();
   toast('➕ ' + optLineName(p, code) + ' ×' + fmtQty(cart[key]));
 }
 function wholesaleMinOf(p){ var m = n2(p.wholesaleMin); return m > 0 ? m : 12; }
@@ -997,7 +939,7 @@ function updateCartBar(){
 function setQty(key, q){
   q = n2(q);
   if (q <= 0) delete cart[key]; else cart[key] = q;
-  renderProducts(); renderWholesale(); renderCart(); renderPick(); updateCartBar();
+  renderProducts(); renderWholesale(); renderCart(); updateCartBar();
 }
 function renderQr(t){
   // ปิดใช้งาน QR พร้อมเพย์แล้ว (ร้านเลือกบันทึกเป็น “โอน” เฉย ๆ ไม่ต้องมี QR)
@@ -1186,20 +1128,16 @@ function renderWholesale(){
     var save = d > 0
       ? '<div class="wsvs">💰 ซื้อครบ ' + fmtQty(min) + ' ' + unit + ' จ่าย ' + money(n2(p.wholesalePrice) * min) + ' · ประหยัด ' + money((n2(p.price) - n2(p.wholesalePrice)) * min) + ' (' + d + '%)</div>'
       : '';
-    var oInfo = hasOptions(p) ? '<div class="opts">🏷️ ' + optionChips(p) + ' · ' + optionsOf(p).length + ' รหัส</div>' : '';
     var cartLine = q > 0
       ? '<div class="wcart"><span class="wtag-ok' + (ep.wholesale ? '' : ' warn') + '">' + (ep.wholesale ? '✅ ใช้ราคาส่งแล้ว' : '⚠️ ยังไม่ถึงขั้นต่ำ ' + fmtQty(min)) + '</span>' +
         '<span style="flex:1"></span>' +
-        (hasOptions(p)
-          ? '<span class="wtag-ok" style="background:#dbeafe;color:#1e40af">ในตะกร้า ' + fmtQty(q) + ' ' + unit + '</span><button class="wsbtn ghost" data-act="pick">🏷️ แก้สี / จำนวน</button>'
-          : '<div class="wqty"><button class="qbtn" data-act="dec">−</button><span class="qnum">' + fmtQty(q) + '</span><button class="qbtn" data-act="inc">+</button></div><button class="wsbtn ghost" data-act="del">ลบออก</button>') +
+        '<div class="wqty"><button class="qbtn" data-act="dec">−</button><span class="qnum">' + fmtQty(q) + '</span><button class="qbtn" data-act="inc">+</button></div><button class="wsbtn ghost" data-act="del">ลบออก</button>' +
         '</div>'
       : '';
     return '<div class="wcard" data-id="' + esc(p.id) + '">' +
       '<div class="wtop"><div class="pico">' + ic + '</div><div class="l">' +
         '<div class="nm">' + esc(p.name) + ' <span class="tag-ws">🏷️ ราคาส่ง</span></div>' +
         '<div class="mt">' + (p.category ? esc(p.category) + ' · ' : '') + 'เหลือ ' + fmtQty(p.stock) + ' ' + unit + ' ' + pill + '</div>' +
-        oInfo +
       '</div></div>' +
       '<div class="prow">' +
         '<div class="pbox"><div class="k">ราคาปลีก</div><div class="v">' + money(p.price) + '</div><div class="u">/ ' + unit + '</div></div>' +
@@ -1207,9 +1145,7 @@ function renderWholesale(){
         '<div class="pbox whole"><div class="k">ราคาส่ง · ตั้งแต่ ' + fmtQty(min) + ' ' + unit + '</div><div class="v">' + money(p.wholesalePrice) + '</div><div class="u">/ ' + unit + '</div></div>' +
       '</div>' + save + cartLine +
       '<div class="wact">' +
-        (hasOptions(p)
-          ? '<button class="wsbtn" data-act="pick">🏷️ เลือกสี / รหัส ลงตะกร้า</button>'
-          : '<button class="wsbtn" data-act="addmin">🛒 ใส่ทั้งโหล (อีก ' + fmtQty(min) + ' ' + unit + ')</button>') +
+        '<button class="wsbtn" data-act="addmin">🛒 ใส่ทั้งโหล (อีก ' + fmtQty(min) + ' ' + unit + ')</button>' +
         '<button class="wsbtn ghost" data-act="edit">✏️ แก้ราคา</button>' +
       '</div></div>';
   }).join('');
@@ -1223,7 +1159,6 @@ function renderWholesale(){
         if (act === 'addmin') addWholesaleMin(id);
         else if (act === 'inc') addToCart(id);
         else if (act === 'edit') openProductForm(id);
-        else if (act === 'pick') openPick(id);
         else if (act === 'dec') { var q = n2(cart[id]); setQty(id, q - 1); toast(q - 1 <= 0 ? '🗑️ เอาออกจากตะกร้าแล้ว' : '➖ ' + fmtQty(q - 1) + ' แล้ว'); }
         else if (act === 'del') { setQty(id, 0); toast('🗑️ เอาออกจากตะกร้าแล้ว'); }
       };
@@ -1419,9 +1354,6 @@ $('btnAddFromWs').onclick = function(){ openProductForm(null); };
 $('wq').oninput = function(){ renderWholesale(); };
 // สรุปแบ่งเดือน
 $('btnAddOpt').onclick = function(){ var r = addOptRow('', ''); r.querySelector('.oCode').focus(); };
-$('xPick').onclick = closePick;
-$('ovPick').onclick = closePick;
-$('btnPickDone').onclick = closePick;
 $('mSel').onchange = function(){ mSel = $('mSel').value; renderMonthReport(); };
 $('mPrev').onclick = function(){ mSel = shiftMonth(mSel || currentMonthKey(), -1); renderMonthReport(); };
 $('mNext').onclick = function(){ mSel = shiftMonth(mSel || currentMonthKey(), 1); renderMonthReport(); };

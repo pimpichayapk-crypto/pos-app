@@ -10,8 +10,6 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧾</text></svg>">
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-firestore-compat.js"></script>
-<script src="vendor/promptpay.js"></script>
-<script src="vendor/qrcode.min.js"></script>
 <script src="firebase-config.js"></script>
 <style id="pageStyle"></style>
 <style>
@@ -371,7 +369,8 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
     <div class="card">
       <div class="sect" style="margin-top:0">ข้อมูลร้าน</div>
       <div class="fld"><label>ชื่อร้าน (แสดงบนใบเสร็จ)</label><input id="sShop" placeholder="เช่น ร้านไหมปิม"></div>
-      <div class="fld"><label>พร้อมเพย์ / เบอร์โทรสำหรับรับเงิน (ใช้สร้าง QR)</label><input id="sPP" inputmode="numeric" placeholder="เช่น 0812345678 หรือเลขบัตรประชาชน 13 หลัก"></div>
+      <input id="sPP" type="hidden" value="">
+      <div class="hint-note">💵📱 <b>วิธีรับเงิน</b> — หน้าชำระเงินมีปุ่มให้เลือก <b>เงินสด</b> หรือ <b>โอน</b> ทุกบิล ระบบบันทึกวิธีจ่ายไว้กับบิลนั้น และแยกยอด เงินสด/โอน ให้ในหน้า 📊 สรุป (ไม่ต้องใส่เลขพร้อมเพย์/ไม่ใช้ QR แล้ว)</div>
       <div class="fld"><label>ชื่อผู้ขาย (ไม่ใส่ก็ได้)</label><input id="sSeller" placeholder="เช่น ปิม"></div>
       <div class="fld"><label>ข้อความท้ายใบเสร็จ</label><textarea id="sFoot" placeholder="เช่น ขอบคุณที่อุดหนุนครับ/ค่ะ"></textarea></div>
       <div class="fld"><label>ขนาดกระดาษเครื่องพิมพ์ใบเสร็จ</label>
@@ -408,7 +407,7 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
   <div class="totline big"><span>ยอดสุทธิ</span><span class="r" id="sumTotal">0.00</span></div>
 
   <div class="fld"><label>วิธีชำระเงิน</label>
-    <div class="seg"><button id="payCash" class="on">💵 เงินสด</button><button id="payTransfer">📱 โอน / พร้อมเพย์</button></div>
+    <div class="seg"><button id="payCash" class="on">💵 เงินสด</button><button id="payTransfer">📱 โอน</button></div>
   </div>
 
   <div id="cashBox">
@@ -418,10 +417,7 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
   </div>
 
   <div id="transferBox" style="display:none">
-    <div class="qrwrap">
-      <div id="qrbox"></div>
-      <div class="hint" id="qrHint"></div>
-    </div>
+    <div class="hint-note" style="margin-top:2px">📱 <b>โอนเงิน</b> — ให้ลูกค้าโอนเข้าบัญชีร้าน แล้ว<b>ตรวจยอดในแอพธนาคารให้เรียบร้อย</b>ก่อนกดยืนยัน (ระบบจะบันทึกบิลนี้ว่า “โอน”)</div>
     <div class="fld" style="margin-top:10px"><label><input type="checkbox" id="gotPaid" style="width:auto;margin-right:7px"> ลูกค้าโอนเงินแล้ว (ตรวจสอบยอดในแอพธนาคารก่อนกดยืนยัน)</label></div>
   </div>
 
@@ -887,19 +883,9 @@ function setQty(id, q){
   renderProducts(); renderWholesale(); renderCart(); updateCartBar();
 }
 function renderQr(t){
-  if (payMethod !== 'transfer') return;
-  var box = $('qrbox'), hint = $('qrHint');
-  var pp = String(settings.promptpay || '').replace(/[^0-9]/g, '');
-  if (!pp) { box.innerHTML = '📱'; hint.innerHTML = 'ยังไม่ได้ตั้ง <b>พร้อมเพย์/เบอร์รับเงิน</b><br>ไปที่แท็บ ⚙️ ตั้งค่า เพื่อใส่ก่อนครับ'; return; }
-  if (!t.total) { box.innerHTML = '📱'; hint.textContent = 'ใส่สินค้าในตะกร้าก่อน แล้ว QR จะขึ้นยอดให้อัตโนมัติ'; return; }
-  try {
-    var payload = window.PromptPayQR.build(pp, t.total);
-    box.innerHTML = '';
-    new QRCode(box, { text: payload, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
-    hint.innerHTML = 'สแกนจ่าย <b>' + money(t.total) + '</b><br>พร้อมเพย์ ' + esc(pp);
-  } catch(e){
-    box.innerHTML = '⚠️'; hint.textContent = 'สร้าง QR ไม่สำเร็จ: ' + e.message;
-  }
+  // ปิดใช้งาน QR พร้อมเพย์แล้ว (ร้านเลือกบันทึกเป็น “โอน” เฉย ๆ ไม่ต้องมี QR)
+  // ถ้าต้องการ QR กลับมา: คืนแท็ก <script> ของ vendor/promptpay.js + vendor/qrcode.min.js
+  // แล้ววาด QR ในนี้ด้วย PromptPayQR.build(...) + new QRCode(...)
 }
 
 // ---------- บันทึกการขาย ----------
@@ -936,6 +922,7 @@ function checkout(){
     toast('✅ บันทึกการขายแล้ว ' + money(order.total));
     invalidateMonth(order.atLocal || Date.now());
     cart = {}; $('discount').value = ''; $('received').value = ''; $('gotPaid').checked = false;
+    setPayMethod('cash');          // บิลใหม่เริ่มที่เงินสดเสมอ (กันบันทึกวิธีจ่ายผิด)
     openSheet('Cart', false);
     currentOrder = Object.assign({ id: newId || null }, order);
     showOrder(currentOrder, true);
@@ -1356,7 +1343,7 @@ function receiptHTML(o){
     var from = (i.wholesale && n2(i.listPrice) > n2(i.price)) ? ' · จาก ' + fmt(i.listPrice) : '';
     return '<tr><td>' + esc(i.name) + tag + '<br><span style="color:#64748b;font-size:11px">' + fmtQty(i.qty) + ' × ' + fmt(i.price) + from + '</span></td><td class="r">' + fmt(i.price * i.qty) + '</td></tr>';
   }).join('');
-  var payTxt = o.pay && o.pay.method === 'transfer' ? 'โอน / พร้อมเพย์' : 'เงินสด';
+  var payTxt = o.pay && o.pay.method === 'transfer' ? 'โอน' : 'เงินสด';
   var h = '<div class="receipt"><div class="ctr"><div class="shop">' + esc(settings.shopName || 'ร้านของฉัน') + '</div>' +
     '<div class="meta">ใบเสร็จรับเงิน' + (isVoid ? ' (ยกเลิก)' : '') + '</div>' +
     '<div class="meta">เลขที่ #' + esc(o.no) + ' · ' + thaiDateTime(toMs(o.at)) + '</div>' +
@@ -1383,7 +1370,7 @@ function receiptText(o){
   L.push('รวม ' + fmt(o.subtotal));
   if (n2(o.discount)) L.push('ส่วนลด -' + fmt(o.discount));
   L.push('ยอดสุทธิ ' + fmt(o.total));
-  L.push('ชำระโดย ' + (o.pay && o.pay.method === 'transfer' ? 'โอน/พร้อมเพย์' : 'เงินสด'));
+  L.push('ชำระโดย ' + (o.pay && o.pay.method === 'transfer' ? 'โอน' : 'เงินสด'));
   if (o.pay && o.pay.method === 'cash') L.push('รับ ' + fmt(o.pay.received) + ' ทอน ' + fmt(o.pay.change));
   L.push(settings.footer || 'ขอบคุณที่อุดหนุนครับ/ค่ะ');
   return L.join('\n');
@@ -1451,7 +1438,7 @@ function renderReport(){
     '<div class="stat"><div class="v amber">' + fmt(list.length ? total / list.length : 0) + '</div><div class="l">เฉลี่ย/บิล</div></div>';
   $('rpay').innerHTML =
     '<div class="stat"><div class="v">' + fmt(cash) + '</div><div class="l">💵 เงินสด</div></div>' +
-    '<div class="stat"><div class="v">' + fmt(tr) + '</div><div class="l">📱 โอน / พร้อมเพย์</div></div>';
+    '<div class="stat"><div class="v">' + fmt(tr) + '</div><div class="l">📱 โอน</div></div>';
   // 7 วันล่าสุด
   var days = [];
   for (var i = 6; i >= 0; i--) {
@@ -1605,7 +1592,7 @@ function renderMonthReport(){
       '<div class="stat"><div class="v amber">' + fmt(a.count ? a.total / a.count : 0) + '</div><div class="l">เฉลี่ย/บิล</div></div>';
     $('mPay').innerHTML =
       '<div class="stat"><div class="v">' + fmt(a.cash) + '</div><div class="l">💵 เงินสด</div></div>' +
-      '<div class="stat"><div class="v">' + fmt(a.transfer) + '</div><div class="l">📱 โอน / พร้อมเพย์</div></div>';
+      '<div class="stat"><div class="v">' + fmt(a.transfer) + '</div><div class="l">📱 โอน</div></div>';
     var cmp = '';
     if (prev && prev.complete) {
       var d = n2(a.total) - n2(prev.total);
@@ -1672,8 +1659,16 @@ $('hq').oninput = function(){ renderHistory(); };
 $('discount').oninput = function(){ renderCart(); };
 $('received').oninput = function(){ renderCart(); };
 $('gotPaid').onchange = function(){ renderCart(); };
-$('payCash').onclick = function(){ payMethod = 'cash'; $('payCash').classList.add('on'); $('payTransfer').classList.remove('on'); $('cashBox').style.display = ''; $('transferBox').style.display = 'none'; renderCart(); };
-$('payTransfer').onclick = function(){ payMethod = 'transfer'; $('payTransfer').classList.add('on'); $('payCash').classList.remove('on'); $('cashBox').style.display = 'none'; $('transferBox').style.display = ''; renderCart(); };
+function setPayMethod(m){
+  payMethod = (m === 'transfer') ? 'transfer' : 'cash';
+  $('payCash').classList.toggle('on', payMethod === 'cash');
+  $('payTransfer').classList.toggle('on', payMethod === 'transfer');
+  $('cashBox').style.display = payMethod === 'cash' ? '' : 'none';
+  $('transferBox').style.display = payMethod === 'transfer' ? '' : 'none';
+  renderCart();
+}
+$('payCash').onclick = function(){ setPayMethod('cash'); };
+$('payTransfer').onclick = function(){ setPayMethod('transfer'); };
 $('btnCheckout').onclick = checkout;
 $('btnVoid').onclick = voidOrder;
 function deleteBill(){
@@ -1739,7 +1734,7 @@ function setPaper(p){
   toast('🖨️ ตั้งขนาดเป็น ' + PAPERS[settings.paper].label + ' แล้ว');
 }
 function labelCompactHTML(o, tiny){
-  var payTxt = (o.pay && o.pay.method === 'transfer') ? 'โอน/พร้อมเพย์' : 'เงินสด';
+  var payTxt = (o.pay && o.pay.method === 'transfer') ? 'โอน' : 'เงินสด';
   var qty = (o.items||[]).reduce(function(s,i){ return s + n2(i.qty); }, 0);
   var when = new Date(toMs(o.at)).toLocaleString('th-TH',{timeZone:TZ, day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit'});
   var h = '<div class="ctr"><div class="shop">' + esc(settings.shopName || 'ร้านของฉัน') + '</div>' +
@@ -1770,7 +1765,7 @@ function receiptDocHTML(o){
     return '<tr><td>' + esc(i.name) + (i.wholesale ? ' (ราคาส่ง)' : '') + '<div class="sub">' + fmtQty(i.qty) + ' × ' + fmt(i.price) + ' ' + esc(i.unit || '') + '</div></td>' +
       '<td class="r">' + fmt(i.price * i.qty) + '</td></tr>';
   }).join('');
-  var payTxt = (o.pay && o.pay.method === 'transfer') ? 'โอน / พร้อมเพย์' : 'เงินสด';
+  var payTxt = (o.pay && o.pay.method === 'transfer') ? 'โอน' : 'เงินสด';
   var h = '<div class="ctr">' +
     '<div class="shop">' + esc(settings.shopName || 'ร้านของฉัน') + '</div>' +
     '<div class="sub">' + (isVoid ? '*** ยกเลิกบิล ***' : 'ใบเสร็จรับเงิน') + '</div>' +
@@ -1820,7 +1815,7 @@ $('btnSaveSettings').onclick = function(){
     warnLow: $('sWarn').value,
     paper: $('sPaper').value
   };
-  if (s.promptpay && s.promptpay.length < 9) { toast('⚠️ เลขพร้อมเพย์สั้นเกินไป (ต้องเป็นเบอร์ 10 หลัก หรือเลขบัตร 13 หลัก)'); return; }
+  // ไม่ตรวจเลขพร้อมเพย์แล้ว — ปิดใช้งาน QR พร้อมเพย์
   S.saveSettings(s).then(function(){ toast('💾 บันทึกการตั้งค่าแล้ว'); renderAll(); })
     .catch(function(e){ toast('⚠️ บันทึกไม่สำเร็จ: ' + e.message); });
 };

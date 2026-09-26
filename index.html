@@ -84,6 +84,33 @@ header .sub{opacity:.9;font-size:12px;margin-top:2px}
 .srow.ws{border-left:4px solid #f59e0b;background:linear-gradient(90deg,#fffbeb,#fff 45%)}
 .pbtn.ws{border-left:4px solid #f59e0b}
 .pbtn .wprice{font-size:11px;color:var(--low);font-weight:700}
+/* แท็บสินค้าราคาส่ง */
+.wcard{background:linear-gradient(90deg,#fffbeb,#fff 40%);border:1px solid rgba(226,232,240,.85);border-left:4px solid #f59e0b;border-radius:14px;padding:11px;margin-bottom:9px;cursor:pointer}
+.wcard:active{background:#fffbeb}
+.wcard .wtop{display:flex;gap:10px;align-items:flex-start}
+.wcard .pico{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#eef2ff,#f0fdfa);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;overflow:hidden}
+.wcard .pico img{width:100%;height:100%;object-fit:cover}
+.wcard .l{flex:1;min-width:0}
+.wcard .nm{font-weight:800;font-size:14.5px;line-height:1.35}
+.wcard .mt{font-size:11.5px;color:var(--muted);margin-top:3px}
+.prow{display:flex;align-items:stretch;gap:7px;margin-top:9px}
+.pbox{flex:1;min-width:0;background:#f8fafc;border:1px solid var(--line);border-radius:11px;padding:7px 9px}
+.pbox .k{font-size:10.5px;color:var(--muted);font-weight:700;line-height:1.3}
+.pbox .v{font-size:16px;font-weight:800;margin-top:2px;color:var(--text)}
+.pbox .u{font-size:10.5px;color:var(--muted);font-weight:700}
+.pbox.whole{background:#fef3c7;border-color:#fcd34d}
+.pbox.whole .v{color:#92400e}
+.wcard .arw{align-self:center;color:#f59e0b;font-weight:800;font-size:15px}
+.wsvs{font-size:11.5px;font-weight:700;color:#92400e;background:#fffbeb;border:1px dashed #fcd34d;border-radius:9px;padding:5px 9px;margin-top:8px;line-height:1.5}
+.wcart{display:flex;align-items:center;gap:7px;margin-top:8px;flex-wrap:wrap}
+.wtag-ok{font-size:11px;font-weight:800;color:var(--ok);background:var(--okbg);border-radius:99px;padding:3px 9px}
+.wtag-ok.warn{color:var(--low);background:var(--lowbg)}
+.wqty{display:flex;align-items:center;gap:6px;background:#e6f4f2;border-radius:12px;padding:3px 5px}
+.wqty .qbtn{width:30px;height:30px;border-radius:9px;border:none;font-size:17px;font-weight:800;line-height:1;font-family:inherit;cursor:pointer;background:#fff;color:var(--primary)}
+.wqty .qnum{min-width:26px;text-align:center;font-weight:800;font-size:15px;color:var(--primary)}
+.wact{display:flex;gap:7px;align-items:center;margin-top:9px;flex-wrap:wrap}
+.wsbtn{border:none;background:var(--primary);color:#fff;font-family:inherit;font-weight:800;font-size:12.5px;border-radius:11px;padding:10px 12px;cursor:pointer;line-height:1.2;white-space:nowrap}
+.wsbtn.ghost{background:#fff;color:var(--text);border:1px solid var(--line)}
 .pbtn .pico{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#eef2ff,#f0fdfa);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;overflow:hidden}
 .pbtn .pico img{width:100%;height:100%;object-fit:cover}
 .pbtn .nm{font-weight:700;font-size:14.5px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
@@ -277,6 +304,18 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
     <div class="empty" id="sempty" style="display:none">ยังไม่มีสินค้า — กด ➕ เพิ่มสินค้า</div>
   </section>
 
+  <!-- ================= สินค้าราคาส่ง ================= -->
+  <section class="view" id="viewWholesale">
+    <div class="stats three" id="wStats"></div>
+    <div class="toolbar">
+      <div class="searchwrap"><span class="ic">🔍</span><input id="wq" type="search" placeholder="ค้นหาสินค้าราคาส่ง / หมวดหมู่"></div>
+    </div>
+    <div class="hint-note">🏷️ <b>สินค้าราคาส่ง</b> — รวมไว้ที่นี่ทั้งหมด ไม่ต้องค้นหาให้ยุ่งยาก · กด <b>🛒 ใส่ทั้งโหล</b> เพื่อใส่จำนวนขั้นต่ำลงตะกร้า (ระบบคิดราคาส่งให้เอง) · กด <b>✏️ แก้ราคา</b> เพื่อแก้ราคาส่ง/จำนวนขั้นต่ำ</div>
+    <div class="empty" id="wnone" style="display:none">ไม่พบสินค้าตามคำค้น</div>
+    <div id="wlist"></div>
+    <div class="empty" id="wempty" style="display:none">ยังไม่มีสินค้าราคาส่ง<br><span style="font-size:12px;color:var(--muted)">ไปที่แท็บ 📦 สินค้า → แตะสินค้า → ใส่ช่อง “ราคาส่ง/หน่วย”</span><br><button class="chip" id="btnAddFromWs" style="padding:9px 14px;margin-top:10px">➕ เพิ่มสินค้าใหม่</button></div>
+  </section>
+
   <!-- ================= ประวัติ ================= -->
   <section class="view" id="viewHistory">
     <div class="toolbar">
@@ -389,6 +428,7 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
 <nav class="tabbar">
   <button data-view="Sell" class="on"><span class="ic">🛒</span>ขาย</button>
   <button data-view="Stock"><span class="ic">📦</span>สินค้า</button>
+  <button data-view="Wholesale"><span class="ic">🏷️</span>ราคาส่ง</button>
   <button data-view="History"><span class="ic">🧾</span>ประวัติ</button>
   <button data-view="Report"><span class="ic">📊</span>สรุป</button>
   <button data-view="Settings"><span class="ic">⚙️</span>ตั้งค่า</button>
@@ -639,7 +679,7 @@ function setLive(){
     'โปรเจกต์: <b>' + esc(isLive ? cfg.projectId : '—') + '</b><br>' +
     'สินค้า: <b>' + products.length + '</b> รายการ · บิล: <b>' + orders.length + '</b> ใบ';
 }
-function renderAll(){ renderHead(); renderCats(); renderProducts(); renderCart(); renderStock(); renderHistory(); renderReport(); renderSettings(); setLive(); }
+function renderAll(){ renderHead(); renderCats(); renderProducts(); renderCart(); renderStock(); renderWholesale(); renderHistory(); renderReport(); renderSettings(); setLive(); }
 function renderHead(){
   $('shopName').textContent = settings.shopName || 'ร้านของฉัน';
   var t = todayStats();
@@ -724,7 +764,7 @@ function addToCart(id){
     if (!confirm('“' + p.name + '” เหลือสต็อก ' + fmtQty(p.stock) + ' ' + (p.unit||'ชิ้น') + '\nขายเกินสต็อกหรือไม่?')) return;
   }
   cart[id] = cur + 1;
-  renderProducts(); renderCart();
+  renderProducts(); renderWholesale(); renderCart(); updateCartBar();
   toast('➕ ' + p.name + ' ×' + fmtQty(cart[id]));
 }
 function wholesaleMinOf(p){ var m = n2(p.wholesaleMin); return m > 0 ? m : 12; }
@@ -807,7 +847,7 @@ window.addEventListener('orientationchange', function(){ setTimeout(syncTabbarHe
 function updateCartBar(){
   syncTabbarHeight();
   var n = cartItems().length;
-  var show = n > 0 && currentView === 'Sell';
+  var show = n > 0 && (currentView === 'Sell' || currentView === 'Wholesale');
   var bar = document.getElementById('cartbar');
   if (bar) bar.classList.toggle('hide', !show);
   document.body.classList.toggle('has-cartbar', show);
@@ -815,7 +855,7 @@ function updateCartBar(){
 function setQty(id, q){
   q = n2(q);
   if (q <= 0) delete cart[id]; else cart[id] = q;
-  renderProducts(); renderCart();
+  renderProducts(); renderWholesale(); renderCart(); updateCartBar();
 }
 function renderQr(t){
   if (payMethod !== 'transfer') return;
@@ -881,7 +921,7 @@ function checkout(){
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
 var currentView = 'Sell';
-var VIEW_NAMES = { Sell: '🛒 หน้าขาย', Stock: '📦 หน้าสินค้า / นับสต็อก', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
+var VIEW_NAMES = { Sell: '🛒 หน้าขาย', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ สินค้าราคาส่ง', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }
 
 function stockStats(){
@@ -957,6 +997,95 @@ function renderStockSheet(){
   if (!p) return;
   $('stTitleTxt').textContent = '📦 ' + p.name;
   $('stNow').textContent = fmtQty(p.stock) + ' ' + (p.unit || 'ชิ้น');
+}
+
+// ---------- สินค้าราคาส่ง ----------
+function wholesaleProducts(){
+  return products.filter(function(p){ return n2(p.wholesalePrice) > 0; })
+    .sort(function(a,b){ return String(a.name||'').localeCompare(String(b.name||''), 'th'); });
+}
+function wsDiscount(p){
+  var r = n2(p.price), w = n2(p.wholesalePrice);
+  if (r <= 0 || w <= 0 || w >= r) return 0;
+  return Math.round((1 - w / r) * 100);
+}
+function wsFiltered(){
+  var q = ($('wq').value || '').trim().toLowerCase();
+  var list = wholesaleProducts();
+  if (!q) return list;
+  return list.filter(function(p){
+    return String(p.name||'').toLowerCase().indexOf(q) >= 0
+      || String(p.category||'').toLowerCase().indexOf(q) >= 0
+      || String(p.note||'').toLowerCase().indexOf(q) >= 0;
+  });
+}
+function addWholesaleMin(id){
+  var p = products.find(function(x){ return x.id === id; });
+  if (!p) return;
+  var min = wholesaleMinOf(p), total = n2(cart[id]) + min;
+  if (total > n2(p.stock)) {
+    if (!confirm('“' + p.name + '” เหลือสต็อก ' + fmtQty(p.stock) + ' ' + (p.unit||'ชิ้น') + '\nขายเกินสต็อกหรือไม่?')) return;
+  }
+  cart[id] = total;
+  renderProducts(); renderWholesale(); renderCart(); updateCartBar();
+  toast('🏷️ ' + p.name + ' ×' + fmtQty(total) + ' (ราคาส่ง)');
+}
+function renderWholesale(){
+  if (!$('wlist')) return;
+  var all = wholesaleProducts(), list = wsFiltered();
+  var inCart = cartItems().filter(function(i){ return i.wholesale; });
+  var avg = all.length ? Math.round(all.reduce(function(s,p){ return s + wsDiscount(p); }, 0) / all.length) : 0;
+  $('wStats').innerHTML =
+    '<div class="stat"><div class="v amber">' + all.length + '</div><div class="l">สินค้าราคาส่ง (รายการ)</div></div>' +
+    '<div class="stat"><div class="v green">' + avg + '%</div><div class="l">ประหยัดเฉลี่ย</div></div>' +
+    '<div class="stat"><div class="v blue">' + inCart.length + '</div><div class="l">ในตะกร้าแล้ว (ขายส่ง)</div></div>';
+  $('wempty').style.display = all.length ? 'none' : 'block';
+  $('wnone').style.display = (all.length && !list.length) ? 'block' : 'none';
+  $('wlist').innerHTML = list.map(function(p){
+    var sc = stockClass(p), unit = esc(p.unit || 'ชิ้น'), min = wholesaleMinOf(p);
+    var q = n2(cart[p.id]), ep = effectivePrice(p, q);
+    var ic = p.image ? '<img src="' + esc(p.image) + '" alt="">' : '📦';
+    var pill = sc === 'out' ? '<span class="pill out">หมด</span>' : (sc === 'low' ? '<span class="pill low">ใกล้หมด</span>' : '<span class="pill ok">ปกติ</span>');
+    var d = wsDiscount(p);
+    var save = d > 0
+      ? '<div class="wsvs">💰 ซื้อครบ ' + fmtQty(min) + ' ' + unit + ' จ่าย ' + money(n2(p.wholesalePrice) * min) + ' · ประหยัด ' + money((n2(p.price) - n2(p.wholesalePrice)) * min) + ' (' + d + '%)</div>'
+      : '';
+    var cartLine = q > 0
+      ? '<div class="wcart"><span class="wtag-ok' + (ep.wholesale ? '' : ' warn') + '">' + (ep.wholesale ? '✅ ใช้ราคาส่งแล้ว' : '⚠️ ยังไม่ถึงขั้นต่ำ ' + fmtQty(min)) + '</span>' +
+        '<span style="flex:1"></span>' +
+        '<div class="wqty"><button class="qbtn" data-act="dec">−</button><span class="qnum">' + fmtQty(q) + '</span><button class="qbtn" data-act="inc">+</button></div>' +
+        '<button class="wsbtn ghost" data-act="del">ลบออก</button></div>'
+      : '';
+    return '<div class="wcard" data-id="' + esc(p.id) + '">' +
+      '<div class="wtop"><div class="pico">' + ic + '</div><div class="l">' +
+        '<div class="nm">' + esc(p.name) + ' <span class="tag-ws">🏷️ ราคาส่ง</span></div>' +
+        '<div class="mt">' + (p.category ? esc(p.category) + ' · ' : '') + 'เหลือ ' + fmtQty(p.stock) + ' ' + unit + ' ' + pill + '</div>' +
+      '</div></div>' +
+      '<div class="prow">' +
+        '<div class="pbox"><div class="k">ราคาปลีก</div><div class="v">' + money(p.price) + '</div><div class="u">/ ' + unit + '</div></div>' +
+        '<div class="arw">➜</div>' +
+        '<div class="pbox whole"><div class="k">ราคาส่ง · ตั้งแต่ ' + fmtQty(min) + ' ' + unit + '</div><div class="v">' + money(p.wholesalePrice) + '</div><div class="u">/ ' + unit + '</div></div>' +
+      '</div>' + save + cartLine +
+      '<div class="wact">' +
+        '<button class="wsbtn" data-act="addmin">🛒 ใส่ทั้งโหล (อีก ' + fmtQty(min) + ' ' + unit + ')</button>' +
+        '<button class="wsbtn ghost" data-act="edit">✏️ แก้ราคา</button>' +
+      '</div></div>';
+  }).join('');
+  Array.prototype.forEach.call($('wlist').querySelectorAll('.wcard'), function(card){
+    var id = card.getAttribute('data-id');
+    card.onclick = function(ev){ if (ev.target && ev.target.closest && ev.target.closest('[data-act]')) return; openProductForm(id); };
+    Array.prototype.forEach.call(card.querySelectorAll('[data-act]'), function(b){
+      var act = b.getAttribute('data-act');
+      b.onclick = function(ev){
+        ev.stopPropagation();
+        if (act === 'addmin') addWholesaleMin(id);
+        else if (act === 'inc') addToCart(id);
+        else if (act === 'edit') openProductForm(id);
+        else if (act === 'dec') { var q = n2(cart[id]); setQty(id, q - 1); toast(q - 1 <= 0 ? '🗑️ เอาออกจากตะกร้าแล้ว' : '➖ ' + fmtQty(q - 1) + ' แล้ว'); }
+        else if (act === 'del') { setQty(id, 0); toast('🗑️ เอาออกจากตะกร้าแล้ว'); }
+      };
+    });
+  });
 }
 function quickAdjust(id, delta){
   var p = products.find(function(x){ return x.id === id; });
@@ -1107,6 +1236,8 @@ $('ssort').onchange = function(){ sSort = $('ssort').value; renderStock(); };
 $('slowOnly').onchange = function(){ sLowOnly = $('slowOnly').checked; renderStock(); };
 $('btnAddProduct').onclick = function(){ openProductForm(null); };
 $('btnAddFromSell').onclick = function(){ openProductForm(null); };
+$('btnAddFromWs').onclick = function(){ openProductForm(null); };
+$('wq').oninput = function(){ renderWholesale(); };
 $('btnSaveProduct').onclick = saveProduct;
 $('btnCloseForm').onclick = function(){ openSheet('Form', false); };
 $('xForm').onclick = function(){ openSheet('Form', false); };
@@ -1483,6 +1614,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tabbar button'), functi
     currentView = b.getAttribute('data-view');
     $('headSub').textContent = viewName(currentView);
     $('view' + currentView).classList.add('on');
+    renderWholesale();
     updateCartBar();
     window.scrollTo(0,0);
   };
@@ -1503,7 +1635,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tabbar button'), functi
   if (useLocal) {
     if (!products.length) {
       products = [
-        { id: uid(), name: 'ไหมอุด้ง (ตัวอย่าง)', category: 'ไหม', unit: 'เมตร', price: 350, stock: 20, lowStock: 5 },
+        { id: uid(), name: 'ไหมอุด้ง (ตัวอย่าง)', category: 'ไหม', unit: 'เมตร', price: 350, stock: 20, lowStock: 5, wholesalePrice: 300, wholesaleMin: 12 },
         { id: uid(), name: 'ผ้าฝ้ายพื้นเมือง (ตัวอย่าง)', category: 'ผ้าฝ้าย', unit: 'เมตร', price: 180, stock: 3, lowStock: 5 }
       ];
       localSave();

@@ -320,10 +320,10 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
     <div class="toolbar">
       <div class="searchwrap"><span class="ic">🔍</span><input id="wq" type="search" placeholder="ค้นหาสินค้าราคาส่ง / หมวดหมู่"></div>
     </div>
-    <div class="hint-note">🏷️ <b>สินค้าราคาส่ง</b> — รวมไว้ที่นี่ทั้งหมด ไม่ต้องค้นหาให้ยุ่งยาก · กด <b>🛒 ใส่ทั้งโหล</b> เพื่อใส่จำนวนขั้นต่ำลงตะกร้า (ระบบคิดราคาส่งให้เอง) · กด <b>✏️ แก้ราคา</b> เพื่อแก้ราคาส่ง/จำนวนขั้นต่ำ</div>
+    <div class="hint-note">🏷️ <b>ยกแพ็ค</b> — รวมสินค้าที่ตั้ง <b>ราคาส่ง</b> ไว้ที่นี่ทั้งหมด ไม่ต้องค้นหาให้ยุ่งยาก · กด <b>🛒 ใส่ทั้งโหล</b> เพื่อใส่จำนวนขั้นต่ำลงตะกร้า (ระบบคิดราคาส่งให้เอง) · กด <b>✏️ แก้ราคา</b> เพื่อแก้ราคาส่ง/จำนวนขั้นต่ำ</div>
     <div class="empty" id="wnone" style="display:none">ไม่พบสินค้าตามคำค้น</div>
     <div id="wlist"></div>
-    <div class="empty" id="wempty" style="display:none">ยังไม่มีสินค้าราคาส่ง<br><span style="font-size:12px;color:var(--muted)">ไปที่แท็บ 📦 สินค้า → แตะสินค้า → ใส่ช่อง “ราคาส่ง/หน่วย”</span><br><button class="chip" id="btnAddFromWs" style="padding:9px 14px;margin-top:10px">➕ เพิ่มสินค้าใหม่</button></div>
+    <div class="empty" id="wempty" style="display:none">ยังไม่มีสินค้ายกแพ็ค (ที่ตั้งราคาส่ง)<br><span style="font-size:12px;color:var(--muted)">ไปที่แท็บ 📦 สินค้า → แตะสินค้า → ใส่ช่อง “ราคาส่ง/หน่วย”</span><br><button class="chip" id="btnAddFromWs" style="padding:9px 14px;margin-top:10px">➕ เพิ่มสินค้าใหม่</button></div>
   </section>
 
   <!-- ================= ประวัติ ================= -->
@@ -453,7 +453,7 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
 <nav class="tabbar">
   <button data-view="Stock" class="on"><span class="ic">📦</span>สินค้า</button>
   <button data-view="Sell"><span class="ic">🛒</span>ปลีก</button>
-  <button data-view="Wholesale"><span class="ic">🏷️</span>ส่ง</button>
+  <button data-view="Wholesale"><span class="ic">🏷️</span>ยกแพ็ค</button>
   <button data-view="History"><span class="ic">🧾</span>ประวัติ</button>
   <button data-view="Report"><span class="ic">📊</span>สรุป</button>
   <button data-view="Settings"><span class="ic">⚙️</span>ตั้งค่า</button>
@@ -472,7 +472,7 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
     <div class="fld" style="flex:1"><label>ราคาส่ง/หน่วย (ไม่ใส่ก็ได้)</label><input id="fWPrice" inputmode="decimal" placeholder="เช่น 95"></div>
     <div class="fld" style="flex:1"><label>ซื้อขั้นต่ำกี่หน่วยจึงได้ราคาส่ง</label><input id="fWMin" inputmode="numeric" placeholder="12" value="12"></div>
   </div>
-  <div class="hint" style="margin:-2px 0 6px">💡 ใส่ราคาโหลแล้ว สินค้านั้นจะติด <b>แถบ 🏷️ ราคาส่ง</b> ให้เห็นชัดทั้งหน้าสินค้าและหน้าขาย · พิมพ์คำว่า “ส่ง” ในช่องค้นหา = ดูเฉพาะสินค้าราคาส่ง</div>
+  <div class="hint" style="margin:-2px 0 6px">💡 ใส่ราคาส่งแล้ว สินค้านั้นจะติด <b>แถบ 🏷️ ราคาส่ง</b> ให้เห็นชัดทั้งหน้าสินค้าและหน้าขาย · พิมพ์คำว่า “ยกแพ็ค” หรือ “ส่ง” ในช่องค้นหา = ดูเฉพาะสินค้าราคาส่ง</div>
   <div style="display:flex;gap:8px">
     <div class="fld" style="flex:1"><label>จำนวนสต็อก</label><input id="fStock" inputmode="decimal" placeholder="0"></div>
     <div class="fld" style="flex:1"><label>เกณฑ์เตือนใกล้หมด</label><input id="fLow" inputmode="numeric" value="5"></div>
@@ -725,7 +725,7 @@ function renderCats(){
     b.onclick = function(){ filterCat = b.getAttribute('data-cat'); renderCats(); renderProducts(); };
   });
 }
-function isWholesaleQuery(q){ return q === 'ส่ง' || q === 'ราคาส่ง' || q === 'ราคาโหล' || q === 'โหล' || q === 'wholesale' || q === 'ws'; }
+function isWholesaleQuery(q){ return q === 'ยกแพ็ค' || q === 'ยกแพค' || q === 'แพ็ค' || q === 'แพค' || q === 'ส่ง' || q === 'ราคาส่ง' || q === 'ราคาโหล' || q === 'โหล' || q === 'wholesale' || q === 'ws'; }
 function filteredProducts(){
   var q = ($('q').value || '').trim().toLowerCase();
   return products.filter(function(p){
@@ -938,7 +938,7 @@ function checkout(){
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
 var currentView = 'Stock';
-var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ส่ง', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
+var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }
 
 function stockStats(){

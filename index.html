@@ -112,7 +112,11 @@ header .sub{opacity:.9;font-size:12px;margin-top:2px}
 .pbtn .pico{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#eef2ff,#f0fdfa);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;overflow:hidden}
 .pbtn .pico img{width:100%;height:100%;object-fit:cover}
 .pbtn .nm{font-weight:700;font-size:14.5px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
-.pbtn .pr{color:var(--primary);font-weight:800;font-size:13.5px;margin-top:2px}
+.pbtn .pr{color:var(--primary);font-weight:900;font-size:17px;margin-top:3px;display:inline-block;letter-spacing:-.2px}
+.pbtn .pr .k{font-size:11px;font-weight:700;color:var(--muted);margin-right:4px;letter-spacing:0}
+.pbtn .pr .u{font-size:11.5px;font-weight:700;color:var(--muted)}
+.fullp{margin-top:4px;font-size:13px;font-weight:800;color:#b45309;background:#fef3c7;border:1px dashed #fcd34d;border-radius:9px;padding:3px 9px;display:inline-block;max-width:100%}
+.fullp .u{font-size:11px;font-weight:700}
 .pbtn .st{font-size:11px;color:var(--muted);margin-top:1px}
 .pbtn .st.low{color:var(--low);font-weight:700} .pbtn .st.out{color:var(--out);font-weight:700}
 .pbtn .body{min-width:0;flex:1}
@@ -483,6 +487,11 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
   </div>
   <div class="hint" style="margin:-2px 0 6px">💡 ใส่ราคาส่งแล้ว สินค้านั้นจะติด <b>แถบ 🏷️ ราคาส่ง</b> ให้เห็นชัดทั้งหน้าสินค้าและหน้าขาย · พิมพ์คำว่า “ยกแพ็ค” หรือ “ส่ง” ในช่องค้นหา = ดูเฉพาะสินค้าราคาส่ง</div>
   <div style="display:flex;gap:8px">
+    <div class="fld" style="flex:1"><label>ราคาขายเต็ม (ไม่ใส่ก็ได้)</label><input id="fFull" inputmode="decimal" placeholder="เช่น 130"></div>
+    <div class="fld" style="flex:1"><label>ชื่อเรียก (เช่น ม้วน / เต็ม)</label><input id="fFullLabel" placeholder="ม้วน"></div>
+  </div>
+  <div class="hint" style="margin:-2px 0 6px">💰 <b>ราคาขายเต็ม</b> ใช้<b>โชว์ให้เห็นบนหน้าขาย</b>คู่กับราคาปลีก (ไว้บอกลูกค้า/เทียบให้เห็นชัด) — <b>ตอนคิดเงินยังใช้ราคาปลีกด้านบนตามเดิม</b></div>
+  <div style="display:flex;gap:8px">
     <div class="fld" style="flex:1"><label>จำนวนสต็อก</label><input id="fStock" inputmode="decimal" placeholder="0"></div>
     <div class="fld" style="flex:1"><label>เกณฑ์เตือนใกล้หมด</label><input id="fLow" inputmode="numeric" value="5"></div>
   </div>
@@ -765,6 +774,11 @@ function renderProducts(){
     var st = 'เหลือ ' + fmtQty(p.stock) + ' ' + esc(p.unit || 'ชิ้น');
     if (sc && warn) st = (sc === 'out' ? '⚠️ หมดสต็อก' : '⚠️ ใกล้หมด ' + fmtQty(p.stock)) + ' ' + esc(p.unit || 'ชิ้น');
     var ep = effectivePrice(p, q);
+    var unitTxt = esc(p.unit || 'ชิ้น');
+    var hasFull = n2(p.fullPrice) > 0;
+    var fullInfo = hasFull
+      ? '<div class="fullp">💰 ขายเต็ม' + (p.fullLabel ? ' (' + esc(p.fullLabel) + ')' : '') + ' ' + money(p.fullPrice) + '</div>'
+      : '';
     var wInfo = n2(p.wholesalePrice) > 0
       ? '<div class="band-ws">🏷️ ราคาส่ง ' + money(p.wholesalePrice) + ' · ตั้งแต่ ' + fmtQty(wholesaleMinOf(p)) + ' ' + esc(p.unit || 'ชิ้น') + (ep.wholesale ? ' ✅ ใช้ราคาส่งแล้ว' : '') + '</div>'
       : '';
@@ -780,7 +794,8 @@ function renderProducts(){
     return '<div class="pbtn' + (q > 0 ? ' in-cart' : '') + (n2(p.wholesalePrice) > 0 ? ' ws' : '') + '" data-id="' + esc(p.id) + '">' +
       '<div class="ptop"><span class="pico">' + ic + '</span>' +
       '<span class="body"><span class="nm">' + esc(p.name) + (n2(p.wholesalePrice) > 0 ? '<span class="tag-ws">🏷️ ราคาส่ง</span>' : '') + '</span>' +
-      '<span class="pr">' + money(p.price) + '</span> <span class="st ' + sc + '">' + st + '</span>' + wInfo + '</span></div>' + qtyBar + '</div>';
+      '<span class="pr">' + (hasFull ? '<span class="k">ขายย่อย</span>' : '') + money(p.price) + ' <span class="u">/ ' + unitTxt + '</span></span>' +
+      fullInfo + '<span class="st ' + sc + '">' + st + '</span>' + wInfo + '</span></div>' + qtyBar + '</div>';
   }).join('');
   Array.prototype.forEach.call($('pgrid').querySelectorAll('.pbtn'), function(card){
     var id = card.getAttribute('data-id');
@@ -1056,6 +1071,7 @@ function renderStock(){
       '<div class="pico">' + ic + '</div>' +
       '<div class="l" data-open="1"><div class="nm">' + esc(p.name) + (n2(p.wholesalePrice) > 0 ? '<span class="tag-ws">🏷️ ราคาส่ง</span>' : '') + '</div>' +
       '<div class="mt">' + (p.category ? esc(p.category) + ' · ' : '') + money(p.price) + ' / ' + unit + ' · เกณฑ์ ' + fmtQty(p.lowStock == null ? 5 : p.lowStock) + '</div>' +
+      (n2(p.fullPrice) > 0 ? '<div class="fullp">💰 ขายเต็ม' + (p.fullLabel ? ' (' + esc(p.fullLabel) + ')' : '') + ' ' + money(p.fullPrice) + '</div>' : '') +
       (n2(p.wholesalePrice) > 0 ? '<div class="band-ws">🏷️ ราคาส่ง ' + money(p.wholesalePrice) + ' / ' + unit + ' · ตั้งแต่ ' + fmtQty(wholesaleMinOf(p)) + ' ' + unit + '</div>' : '') +
       (hasOptions(p) ? '<div class="opts">🏷️ ' + optionChips(p) + ' · ' + optionsOf(p).length + ' รหัส</div>' : '') +
       '<div class="mt">เหลือ ' + fmtQty(p.stock) + ' ' + unit + ' ' + pill + '</div></div>' +
@@ -1143,7 +1159,9 @@ function renderWholesale(){
         '<div class="pbox"><div class="k">ราคาปลีก</div><div class="v">' + money(p.price) + '</div><div class="u">/ ' + unit + '</div></div>' +
         '<div class="arw">➜</div>' +
         '<div class="pbox whole"><div class="k">ราคาส่ง · ตั้งแต่ ' + fmtQty(min) + ' ' + unit + '</div><div class="v">' + money(p.wholesalePrice) + '</div><div class="u">/ ' + unit + '</div></div>' +
-      '</div>' + save + cartLine +
+      '</div>' + save +
+      (n2(p.fullPrice) > 0 ? '<div class="fullp">💰 ขายเต็ม' + (p.fullLabel ? ' (' + esc(p.fullLabel) + ')' : '') + ' ' + money(p.fullPrice) + '</div>' : '') +
+      cartLine +
       '<div class="wact">' +
         '<button class="wsbtn" data-act="addmin">🛒 ใส่ทั้งโหล (อีก ' + fmtQty(min) + ' ' + unit + ')</button>' +
         '<button class="wsbtn ghost" data-act="edit">✏️ แก้ราคา</button>' +
@@ -1221,6 +1239,8 @@ function openProductForm(id){
   $('fPrice').value = (p && p.price != null) ? p.price : '';
   $('fWPrice').value = (p && p.wholesalePrice != null && n2(p.wholesalePrice) > 0) ? p.wholesalePrice : '';
   $('fWMin').value = (p && p.wholesaleMin != null && n2(p.wholesaleMin) > 0) ? p.wholesaleMin : 12;
+  $('fFull').value = (p && p.fullPrice != null && n2(p.fullPrice) > 0) ? p.fullPrice : '';
+  $('fFullLabel').value = p ? (p.fullLabel || '') : '';
   $('fUnit').value = p ? (p.unit || 'ชิ้น') : 'ชิ้น';
   $('fStock').value = (p && p.stock != null) ? p.stock : '';
   $('fLow').value = (p && p.lowStock != null) ? p.lowStock : 5;
@@ -1242,6 +1262,8 @@ function collectProduct(){
     price: Math.max(0, n2($('fPrice').value)),
     wholesalePrice: Math.max(0, n2($('fWPrice').value)),
     wholesaleMin: Math.max(0, parseInt($('fWMin').value, 10) || 12),
+    fullPrice: Math.max(0, n2($('fFull').value)),
+    fullLabel: ($('fFullLabel').value || '').replace(/^\s+|\s+$/g, ''),
     stock: Math.max(0, n2($('fStock').value)),
     lowStock: Math.max(0, parseInt($('fLow').value, 10) || 0),
     note: ($('fNote').value || '').replace(/^\s+|\s+$/g, ''),
@@ -1258,6 +1280,7 @@ function saveProduct(){
     if (n2(before.price) !== data.price) diffs.push('ราคาปลีก ' + fmt(before.price) + ' → ' + fmt(data.price));
     if (n2(before.wholesalePrice) !== data.wholesalePrice) diffs.push('ราคาโหล ' + fmt(before.wholesalePrice) + ' → ' + fmt(data.wholesalePrice));
     if (n2(before.wholesaleMin) !== data.wholesaleMin) diffs.push('ขั้นต่ำโหล ' + fmtQty(before.wholesaleMin) + ' → ' + fmtQty(data.wholesaleMin));
+    if (n2(before.fullPrice) !== data.fullPrice) diffs.push('ราคาขายเต็ม ' + fmt(before.fullPrice) + ' → ' + fmt(data.fullPrice) + (data.fullLabel ? ' (' + data.fullLabel + ')' : ''));
     if (n2(before.stock) !== data.stock) diffs.push('สต็อก ' + fmtQty(before.stock) + ' → ' + fmtQty(data.stock));
     if (String(before.category || '') !== data.category) diffs.push('หมวดหมู่ ' + (before.category || '-') + ' → ' + (data.category || '-'));
     if (String(before.unit || '') !== data.unit) diffs.push('หน่วย ' + (before.unit || '-') + ' → ' + (data.unit || '-'));

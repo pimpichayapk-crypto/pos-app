@@ -75,6 +75,10 @@ header .sub{opacity:.9;font-size:12px;margin-top:2px}
 .pbtn .qbtn.minus{background:#fff;color:#e5484d;box-shadow:0 1px 3px rgba(15,23,42,.12)}
 .pbtn .qbtn.plus{background:var(--primary);color:#fff}
 .pbtn .qnum{min-width:34px;text-align:center;font-weight:800;font-size:19px;color:var(--primary)}
+.qin{width:58px;text-align:center;font-weight:800;font-size:18px;color:var(--primary);border:1px solid var(--line);border-radius:10px;padding:8px 4px;background:#fff;font-family:inherit;outline:none}
+.qin:focus{border-color:var(--primary);box-shadow:0 0 0 2px rgba(15,118,110,.15)}
+.citem .qin{width:62px;font-size:16px;padding:7px 4px}
+.rund{font-size:11px;font-weight:700;color:#b45309;background:#fef3c7;border-radius:8px;padding:1px 6px;margin-left:5px;white-space:nowrap}
 .pbtn .qdel{border:none;background:none;font-family:inherit;font-size:13px;color:#b91c1c;text-decoration:underline;cursor:pointer;padding:3px 0 3px 6px;white-space:nowrap}
 .tag-w{display:inline-block;background:var(--lowbg);color:#92400e;font-size:10px;font-weight:800;border-radius:99px;padding:1px 7px;margin-left:4px;vertical-align:middle}
 .tag-ws{display:inline-block;background:#fef3c7;color:#92400e;font-size:11.5px;font-weight:800;border-radius:99px;padding:3px 9px;margin-left:5px;vertical-align:middle;white-space:nowrap}
@@ -580,6 +584,27 @@ function toMs(v){
   var t = new Date(v).getTime(); return isNaN(t) ? Date.now() : t;
 }
 function money(v){ return '฿' + fmt(v); }
+// จำนวนที่พิมพ์เอง: รองรับทศนิยม (1.5 / 1,5) และจำนวนเต็ม
+function parseQty(v){
+  var s = String(v == null ? '' : v).replace(/,/g, '.').replace(/[^0-9.]/g, '');
+  var x = parseFloat(s);
+  if (isNaN(x) || x < 0) x = 0;
+  return Math.round(x * 100) / 100;
+}
+// เงินต่อบรรทัด = จำนวน × ราคา แล้ว "ปัดเศษขึ้น" เป็นจำนวนเต็มบาทเสมอ
+function lineAmount(price, qty){
+  var raw = Math.round(n2(price) * n2(qty) * 100) / 100;
+  return Math.ceil(raw - 1e-9);
+}
+function isRounded(price, qty){
+  var raw = Math.round(n2(price) * n2(qty) * 100) / 100;
+  return Math.abs(raw - Math.round(raw)) > 1e-9;
+}
+// ยอดเงินต่อบรรทัดในบิล (บิลเก่าที่ยังไม่มี amount ให้คิด price × qty)
+function itemAmount(i){
+  if (!i) return 0;
+  return (i.amount != null) ? n2(i.amount) : (Math.round(n2(i.price) * n2(i.qty) * 100) / 100);
+}
 function itemsSummary(items){
   var names = (items||[]).map(function(i){ return i.name + '×' + fmtQty(i.qty); });
   var s = names.slice(0,3).join(', ');
@@ -785,7 +810,7 @@ function renderProducts(){
     var qtyBar = q > 0
       ? '<div class="pqty" data-qty="1">' +
           '<button class="qbtn minus" data-act="minus" aria-label="ลด">−</button>' +
-          '<span class="qnum">' + fmtQty(q) + '</span>' +
+          '<input class="qin" inputmode="decimal" value="' + fmtQty(q) + '" aria-label="จำนวน">' +
           '<button class="qbtn plus" data-act="plus" aria-label="เพิ่ม">+</button>' +
           '<span class="sp"></span>' +
           '<button class="qdel" data-act="del">ลบออก</button>' +
@@ -801,13 +826,26 @@ function renderProducts(){
     var id = card.getAttribute('data-id');
     card.onclick = function(ev){
       var t = ev.target;
-      if (t && t.closest && (t.closest('.qbtn.minus') || t.closest('.qdel'))) return;
+      if (t && t.closest && (t.closest('.qbtn.minus') || t.closest('.qdel') || t.closest('.qin') || t.closest('[data-act]'))) return;
       addToCart(id);
     };
     var minus = card.querySelector('.qbtn.minus'), plus = card.querySelector('.qbtn.plus'), del = card.querySelector('.qdel');
-    if (minus) minus.onclick = function(ev){ ev.stopPropagation(); var q = n2(cart[id]); setQty(id, q - 1); toast(q - 1 <= 0 ? '🗑️ เอาออกจากตะกร้าแล้ว' : '➖ ' + fmtQty(q - 1) + ' ชิ้น'); };
+    if (minus) minus.onclick = function(ev){ ev.stopPropagation(); var q = n2(cartQtyOfProduct(id)); setQty(id, q - 1); toast(q - 1 <= 0 ? '🗑️ เอาออกจากตะกร้าแล้ว' : '➖ ' + fmtQty(q - 1) + ' ชิ้น'); };
     if (plus) plus.onclick = function(ev){ ev.stopPropagation(); addToCart(id); };
     if (del) del.onclick = function(ev){ ev.stopPropagation(); setQty(id, 0); toast('🗑️ เอาออกจากตะกร้าแล้ว'); };
+    var qin = card.querySelector('.qin');
+    if (qin) {
+      var commit = function(){
+        var v = parseQty(qin.value);
+        if (v <= 0) { setQty(id, 0); toast('🗑️ เอาออกจากตะกร้าแล้ว'); }
+        else { setQty(id, v); toast('✏️ ตั้งจำนวน ' + fmtQty(v) + ' ' + (prod ? (prod.unit || 'ชิ้น') : '')); }
+      };
+      var prod = products.find(function(x){ return x.id === id; });
+      qin.onclick = function(ev){ ev.stopPropagation(); };
+      qin.onfocus = function(){ qin.select(); };
+      qin.onchange = commit;
+      qin.onkeydown = function(ev){ if (ev.key === 'Enter') { ev.preventDefault(); qin.blur(); } };
+    }
   });
 }
 
@@ -878,14 +916,17 @@ function cartItems(){
     return { key: key, id: p.id, name: p.name + (lbl ? ' · ' + lbl : ''), baseName: p.name,
              option: lbl, optionCode: s.code || '',
              unit: p.unit || 'ชิ้น', price: ep.price, listPrice: n2(p.price), qty: q,
+             amount: lineAmount(ep.price, q), raw: Math.round(n2(ep.price) * q * 100) / 100,
+             rounded: isRounded(ep.price, q),
              stock: n2(p.stock), wholesale: ep.wholesale, wholesaleMin: ep.min };
   }).filter(Boolean);
 }
 function cartTotals(){
   var items = cartItems();
-  var sub = items.reduce(function(s,i){ return s + i.price * i.qty; }, 0);
+  var sub = items.reduce(function(s,i){ return s + n2(i.amount); }, 0);          // ต่อบรรทัดปัดขึ้นแล้ว
   var disc = Math.min(n2($('discount').value), sub);
-  return { items: items, sub: n2(sub), disc: n2(disc), total: n2(sub - disc), qty: items.reduce(function(s,i){ return s + i.qty; }, 0) };
+  var total = Math.ceil(Math.round((sub - disc) * 100) / 100 - 1e-9);            // ยอดสุทธิปัดขึ้นเป็นจำนวนเต็มบาท
+  return { items: items, sub: n2(sub), disc: n2(disc), total: n2(total), qty: items.reduce(function(s,i){ return s + i.qty; }, 0) };
 }
 function renderCart(){
   var t = cartTotals();
@@ -894,14 +935,26 @@ function renderCart(){
   $('cartItems').innerHTML = t.items.map(function(i){
     return '<div class="citem" data-id="' + esc(i.key) + '">' +
       '<div class="nm">' + esc(i.name) + (i.optionCode ? ' <span style="font-size:11px;color:var(--muted)">[' + esc(i.optionCode) + ']</span>' : '') + (i.wholesale ? '<span class="tag-w">ราคาส่ง</span>' : '') +
-      '<div class="sub">' + money(i.price) + ' / ' + esc(i.unit) + (i.wholesale ? ' · จาก ' + money(i.listPrice) : '') + '</div></div>' +
-      '<div class="qty"><button class="minus" data-act="minus">−</button><span class="n">' + fmtQty(i.qty) + '</span><button class="plus" data-act="plus">+</button></div>' +
-      '<div class="amt">' + money(i.price * i.qty) + '</div></div>';
+      '<div class="sub">' + money(i.price) + ' / ' + esc(i.unit) + (i.wholesale ? ' · จาก ' + money(i.listPrice) : '') + (i.rounded ? ' <span class="rund">ปัดขึ้นจาก ' + fmt(i.raw) + '</span>' : '') + '</div></div>' +
+      '<div class="qty"><button class="minus" data-act="minus">−</button><input class="qin" inputmode="decimal" value="' + fmtQty(i.qty) + '"><button class="plus" data-act="plus">+</button></div>' +
+      '<div class="amt">' + money(i.amount) + '</div></div>';
   }).join('');
   Array.prototype.forEach.call($('cartItems').querySelectorAll('.citem'), function(row){
-    var id = row.getAttribute('data-id');
-    row.querySelector('.minus').onclick = function(){ setQty(id, (cart[id]||0) - 1); };
-    row.querySelector('.plus').onclick = function(){ setQty(id, (cart[id]||0) + 1); };
+    var id = row.getAttribute('data-id');   // = cart key
+    row.querySelector('.minus').onclick = function(){ setQty(id, n2(cart[id]) - 1); };
+    row.querySelector('.plus').onclick = function(){ setQty(id, n2(cart[id]) + 1); };
+    var qin = row.querySelector('.qin');
+    if (qin) {
+      var commit = function(){
+        var v = parseQty(qin.value);
+        if (v <= 0) { setQty(id, 0); toast('🗑️ เอาออกจากตะกร้าแล้ว'); }
+        else { setQty(id, v); toast('✏️ ' + fmtQty(v) + ' ' + (products.find(function(x){ return x.id === splitKey(id).id; }) || {}).unit + ''); }
+      };
+      qin.onclick = function(ev){ ev.stopPropagation(); };
+      qin.onfocus = function(){ qin.select(); };
+      qin.onchange = commit;
+      qin.onkeydown = function(ev){ if (ev.key === 'Enter') { ev.preventDefault(); qin.blur(); } };
+    }
   });
   $('sumSub').textContent = fmt(t.sub);
   $('sumDisc').textContent = fmt(t.disc);
@@ -985,7 +1038,7 @@ function checkout(){
   var rec = payMethod === 'cash' ? n2($('received').value) : t.total;
   var order = {
     no: id.no, seq: id.seq, dayKey: id.dayKey,
-    items: t.items.map(function(i){ return { id: i.id, name: i.name, baseName: i.baseName || i.name, option: i.option || '', optionCode: i.optionCode || '', unit: i.unit, price: i.price, listPrice: i.listPrice, qty: i.qty, wholesale: !!i.wholesale, wholesaleMin: i.wholesaleMin }; }),
+    items: t.items.map(function(i){ return { id: i.id, name: i.name, baseName: i.baseName || i.name, option: i.option || '', optionCode: i.optionCode || '', unit: i.unit, price: i.price, listPrice: i.listPrice, qty: i.qty, amount: i.amount, raw: i.raw, rounded: !!i.rounded, wholesale: !!i.wholesale, wholesaleMin: i.wholesaleMin }; }),
     subtotal: t.sub, discount: t.disc, total: t.total,
     pay: { method: payMethod, received: rec, change: n2(rec - t.total) },
     seller: settings.seller || '', status: 'paid', atLocal: Date.now(), at: Date.now()
@@ -1147,7 +1200,7 @@ function renderWholesale(){
     var cartLine = q > 0
       ? '<div class="wcart"><span class="wtag-ok' + (ep.wholesale ? '' : ' warn') + '">' + (ep.wholesale ? '✅ ใช้ราคาส่งแล้ว' : '⚠️ ยังไม่ถึงขั้นต่ำ ' + fmtQty(min)) + '</span>' +
         '<span style="flex:1"></span>' +
-        '<div class="wqty"><button class="qbtn" data-act="dec">−</button><span class="qnum">' + fmtQty(q) + '</span><button class="qbtn" data-act="inc">+</button></div><button class="wsbtn ghost" data-act="del">ลบออก</button>' +
+        '<div class="wqty"><button class="qbtn" data-act="dec">−</button><input class="qin" data-act="qin" inputmode="decimal" value="' + fmtQty(q) + '" aria-label="จำนวน"><button class="qbtn" data-act="inc">+</button></div><button class="wsbtn ghost" data-act="del">ลบออก</button>' +
         '</div>'
       : '';
     return '<div class="wcard" data-id="' + esc(p.id) + '">' +
@@ -1172,6 +1225,18 @@ function renderWholesale(){
     card.onclick = function(ev){ if (ev.target && ev.target.closest && ev.target.closest('[data-act]')) return; openProductForm(id); };
     Array.prototype.forEach.call(card.querySelectorAll('[data-act]'), function(b){
       var act = b.getAttribute('data-act');
+      if (act === 'qin') {
+        var commitQ = function(){
+          var v = parseQty(b.value);
+          if (v <= 0) { setQty(id, 0); toast('🗑️ เอาออกจากตะกร้าแล้ว'); }
+          else { setQty(id, v); toast('✏️ ตั้งจำนวน ' + fmtQty(v)); }
+        };
+        b.onclick = function(ev){ ev.stopPropagation(); };
+        b.onfocus = function(){ b.select(); };
+        b.onchange = commitQ;
+        b.onkeydown = function(ev){ if (ev.key === 'Enter') { ev.preventDefault(); b.blur(); } };
+        return;
+      }
       b.onclick = function(ev){
         ev.stopPropagation();
         if (act === 'addmin') addWholesaleMin(id);
@@ -1463,7 +1528,7 @@ function receiptHTML(o){
     var tag = i.wholesale ? ' <span style="font-size:10px;font-weight:800;color:#92400e;background:#fef3c7;border-radius:99px;padding:1px 6px">ราคาส่ง</span>' : '';
     var from = (i.wholesale && n2(i.listPrice) > n2(i.price)) ? ' · จาก ' + fmt(i.listPrice) : '';
     var cd = i.optionCode ? ' · รหัส ' + esc(i.optionCode) : '';
-    return '<tr><td>' + esc(i.name) + tag + '<br><span style="color:#64748b;font-size:11px">' + fmtQty(i.qty) + ' × ' + fmt(i.price) + from + cd + '</span></td><td class="r">' + fmt(i.price * i.qty) + '</td></tr>';
+    return '<tr><td>' + esc(i.name) + tag + '<br><span style="color:#64748b;font-size:11px">' + fmtQty(i.qty) + ' × ' + fmt(i.price) + from + cd + (i.rounded ? ' · ปัดขึ้น' : '') + '</span></td><td class="r">' + fmt(itemAmount(i)) + '</td></tr>';
   }).join('');
   var payTxt = o.pay && o.pay.method === 'transfer' ? 'โอน' : 'เงินสด';
   var h = '<div class="receipt"><div class="ctr"><div class="shop">' + esc(settings.shopName || 'ร้านของฉัน') + '</div>' +
@@ -1487,7 +1552,7 @@ function receiptText(o){
   L.push('เลขที่ #' + o.no + ' · ' + thaiDateTime(toMs(o.at)));
   if (o.seller) L.push('ผู้ขาย: ' + o.seller);
   L.push('------------------------------');
-  (o.items||[]).forEach(function(i){ L.push(i.name + (i.optionCode ? ' [' + i.optionCode + ']' : '') + (i.wholesale ? ' (ราคาส่ง)' : '') + ' ' + fmtQty(i.qty) + ' × ' + fmt(i.price) + ' = ' + fmt(i.price * i.qty)); });
+  (o.items||[]).forEach(function(i){ L.push(i.name + (i.optionCode ? ' [' + i.optionCode + ']' : '') + (i.wholesale ? ' (ราคาส่ง)' : '') + ' ' + fmtQty(i.qty) + ' × ' + fmt(i.price) + ' = ' + fmt(itemAmount(i)) + (i.rounded ? ' (ปัดขึ้น)' : '')); });
   L.push('------------------------------');
   L.push('รวม ' + fmt(o.subtotal));
   if (n2(o.discount)) L.push('ส่วนลด -' + fmt(o.discount));
@@ -1885,7 +1950,7 @@ function receiptDocHTML(o){
   var isVoid = o.status === 'void';
   var rows = (o.items||[]).map(function(i){
     return '<tr><td>' + esc(i.name) + (i.optionCode ? ' [' + esc(i.optionCode) + ']' : '') + (i.wholesale ? ' (ราคาส่ง)' : '') + '<div class="sub">' + fmtQty(i.qty) + ' × ' + fmt(i.price) + ' ' + esc(i.unit || '') + '</div></td>' +
-      '<td class="r">' + fmt(i.price * i.qty) + '</td></tr>';
+      '<td class="r">' + fmt(itemAmount(i)) + '</td></tr>';
   }).join('');
   var payTxt = (o.pay && o.pay.method === 'transfer') ? 'โอน' : 'เงินสด';
   var h = '<div class="ctr">' +
@@ -1919,7 +1984,7 @@ function sampleOrder(){
     { name: 'ผ้าฝ้ายพื้นเมือง', unit: 'เมตร', price: 180, qty: 1.5 },
     { name: 'ผ้าไหมยกดอก', unit: 'เมตร', price: 450, qty: 1 }
   ];
-  var sub = items.reduce(function(s,i){ return s + i.price * i.qty; }, 0);
+  var sub = items.reduce(function(s,i){ return s + itemAmount(i); }, 0);
   var disc = 50, total = n2(sub - disc);
   return { no: 'ตัวอย่าง', at: d, items: items, subtotal: n2(sub), discount: disc, total: total,
     pay: { method: 'cash', received: 1500, change: n2(1500 - total) }, seller: settings.seller || '', status: 'paid' };

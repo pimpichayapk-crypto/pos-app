@@ -638,6 +638,7 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
   <h2><span id="pkTitle">เลือกสินค้า</span> <button class="x" id="xPick2">✕</button></h2>
   <div id="pkBody"></div>
   <button class="btn" id="btnPkAdd">🛒 เพิ่มไปยังตะกร้า</button>
+  <div class="pkview" id="btnPkDetail">🔍 ดูรายละเอียดสินค้า ›</div>
   <div class="pkview" id="btnPkCards">📋 ดูเป็นรายการการ์ด ›</div>
 </div>
 
@@ -1157,7 +1158,7 @@ function renderProducts(){
     card.onclick = function(ev){
       var t = ev.target;
       if (t && t.closest && t.closest('[data-act]')) return;
-      openProd(id);
+      openProdFromCard(id);
     };
     Array.prototype.forEach.call(card.querySelectorAll('[data-act]'), function(b){
       var act = b.getAttribute('data-act');
@@ -1188,6 +1189,12 @@ function cartCodeOfProduct(id){
   return ks.length ? String(splitKey(ks[0]).code || '') : '';
 }
 function openProd(id){ prodTarget = id; pdPick = pdLast[id] || cartCodeOfProduct(id); renderProdSheet(); openSheet('Prod', true); }
+// แตะการ์ดสินค้า: ถ้ามีสินค้าที่คล้ายกันในกลุ่ม → เด้งชีตตัวเลือกให้เลย
+function openProdFromCard(id){
+  var p = products.find(function(x){ return x.id === id; });
+  if (p && siblingsOf(p).length > 1) { openCatPick(catNameOf(p), groupTokenOf(p), id); return; }
+  openProd(id);
+}
 function closeProd(){ openSheet('Prod', false); }
 // ---------- ชีตเลือกสินค้าในหมวด (กดหมวด → เด้งตัวเลือกขึ้นมา) ----------
 var pickCat = null, pkPick = '', pickGroup = '';
@@ -1259,6 +1266,8 @@ function renderCatPick(){
     if (n2(cart[key]) > 0) { closeCatPick(); return; }
     addToCart(p.id);
   };
+  $('btnPkDetail').style.display = p ? 'block' : 'none';
+  $('btnPkDetail').onclick = function(){ if (!p) return; var id = p.id; closeCatPick(); openProd(id); };
   $('btnPkCards').textContent = '📋 ดูเป็นรายการการ์ด ›';
   $('btnPkCards').onclick = function(){
     var c = pickCat, g = pickGroup; closeCatPick();
@@ -1531,7 +1540,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 16;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 17;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }

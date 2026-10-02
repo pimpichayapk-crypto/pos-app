@@ -930,7 +930,8 @@ function setLive(){
   $('statusBox').innerHTML =
     'โหมด: <b>' + (useLocal ? 'ตัวอย่าง (เก็บในเครื่อง)' : 'ออนไลน์ (Firestore)') + '</b><br>' +
     'โปรเจกต์: <b>' + esc(isLive ? cfg.projectId : '—') + '</b><br>' +
-    'สินค้า: <b>' + products.length + '</b> รายการ · บิล: <b>' + orders.length + '</b> ใบ';
+    'สินค้า: <b>' + products.length + '</b> รายการ · บิล: <b>' + orders.length + '</b> ใบ<br>' +
+    '📱 เวอร์ชันแอพ: <b>v' + BUILD + '</b> (ถ้าเลขนี้ไม่ตรงกับที่แจ้ง แปลว่าเครื่องยังจำเวอร์ชันเก่า — ปิดแอพแล้วเปิดใหม่)';
 }
 function renderAll(){ renderHead(); renderSell(); renderProducts(); renderCart(); renderStock(); renderWholesale(); renderProdSheet(); renderHistory(); renderReport(); renderMonthReport(); renderSettings(); setLive(); }
 function renderHead(){
@@ -1530,6 +1531,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
+var BUILD = 16;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }
@@ -2520,6 +2522,18 @@ Array.prototype.forEach.call(document.querySelectorAll('.tabbar button'), functi
     window.scrollTo(0,0);
   };
 });
+
+// ---------- กันมือถือจำเวอร์ชันเก่า: เช็ค version.json แล้วรีโหลดเองถ้ามีเวอร์ชันใหม่ ----------
+(function checkBuild(){
+  try {
+    fetch('version.json?_=' + Date.now(), { cache: 'no-store' }).then(function(r){ return r.json(); }).then(function(v){
+      if (v && Number(v.build) > BUILD) {
+        var u = location.pathname + '?v=' + v.build + location.hash;
+        location.replace(u);
+      }
+    }).catch(function(){});
+  } catch (e) {}
+})();
 
 // ---------- start ----------
 (function init(){

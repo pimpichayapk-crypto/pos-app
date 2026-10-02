@@ -62,29 +62,65 @@ header .sub{opacity:.9;font-size:12px;margin-top:2px}
 .chip .cnt{display:inline-block;margin-left:6px;background:rgba(15,23,42,.10);border-radius:99px;padding:0 6px;font-size:11px;font-weight:800}
 .chip.active .cnt{background:rgba(255,255,255,.3)}
 
-/* product grid */
-.grid{display:block}
-.pbtn{background:var(--card);border:1px solid rgba(226,232,240,.85);border-radius:16px;padding:14px;margin-bottom:11px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:12px;font-family:inherit;box-shadow:0 2px 8px rgba(15,23,42,.04);color:var(--text);width:100%}
+/* product grid — แบบ Shopee 2 คอลัมน์ (โทนสีเขียวเดิม) */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;align-items:start}
+.pbtn{background:var(--card);border:1px solid rgba(226,232,240,.85);border-radius:14px;overflow:hidden;position:relative;text-align:left;cursor:pointer;font-family:inherit;box-shadow:0 1px 3px rgba(15,23,42,.06);color:var(--text);width:100%;padding:0;display:block}
 .pbtn:active{background:#f8fafc}
-.pbtn .ptop{flex:1;min-width:0;display:flex;gap:12px;align-items:center}
-.pbtn .ptop .body{flex:1;min-width:0}
-.pbtn.in-cart{border-color:var(--primary);box-shadow:0 0 0 2px rgba(15,118,110,.14)}
-.pbtn .pqty{display:flex;align-items:center;gap:7px;background:#e6f4f2;border-radius:14px;padding:6px 8px;flex-shrink:0}
+.pbtn .pimg{height:110px;background:linear-gradient(135deg,#eef2ff,#f0fdfa);display:flex;align-items:center;justify-content:center;font-size:42px;position:relative;overflow:hidden}
+.pbtn .pimg img{width:100%;height:100%;object-fit:cover}
+.pbtn .pimg .qb{position:absolute;top:6px;right:6px;background:var(--primary);color:#fff;font-size:11px;font-weight:800;border-radius:99px;min-width:22px;height:22px;display:flex;align-items:center;justify-content:center;padding:0 6px}
+.pbtn .pimg .bdg{position:absolute;top:6px;left:6px;background:#fef3c7;color:#92400e;font-size:9.5px;font-weight:800;border-radius:5px;padding:2px 6px;margin:0}
+.pbtn .pimg .bdg.out{background:#fee2e2;color:#b91c1c}
+.pbtn .pbd{padding:8px 9px 10px}
+.pbtn .ptop{display:block}
+.pbtn .nm{font-weight:700;font-size:13px;line-height:1.35;height:35px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;white-space:normal}
+.pbtn .pr{color:var(--primary);font-weight:900;font-size:18px;margin-top:5px;display:block;letter-spacing:-.3px}
+.pbtn .pr .k{font-size:10.5px;font-weight:700;color:var(--muted);margin-right:3px;letter-spacing:0}
+.pbtn .pr .u{font-size:11px;font-weight:700;color:var(--muted)}
+.pbtn .tags{margin-top:5px;display:flex;gap:4px;flex-wrap:wrap}
+.pbtn .tag2{font-size:10px;font-weight:800;border-radius:6px;padding:2px 6px;white-space:nowrap}
+.pbtn .tag2.full{background:#e6f4f2;color:#0f766e;border:1px dashed #5eead4}
+.pbtn .tag2.ws{background:#fef3c7;color:#92400e;border:1px dashed #fcd34d}
+.pbtn .tag2.opt{background:#dbeafe;color:#1e40af;border:1px dashed #93c5fd}
+.pbtn .st{font-size:11px;color:var(--muted);margin-top:5px;display:block}
+.pbtn .st.low{color:var(--low);font-weight:700} .pbtn .st.out{color:var(--out);font-weight:700}
+.pbtn .body{display:block}
+.pbtn .addfab{position:absolute;right:8px;bottom:8px;width:34px;height:34px;border-radius:99px;background:var(--primary);color:#fff;font-size:20px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(15,118,110,.35)}
+.pbtn .pqty{display:flex;align-items:center;gap:5px;background:#e6f4f2;border-radius:11px;padding:3px 5px;margin-top:7px;width:fit-content}
 .pbtn .pqty .sp{display:none}
-.pbtn .qbtn{width:40px;height:40px;border-radius:12px;border:none;font-size:21px;font-weight:800;line-height:1;font-family:inherit;cursor:pointer;flex-shrink:0}
+.pbtn .qbtn{width:34px;height:34px;border-radius:10px;border:none;font-size:18px;font-weight:800;line-height:1;font-family:inherit;cursor:pointer;flex-shrink:0}
 .pbtn .qbtn.minus{background:#fff;color:#e5484d;box-shadow:0 1px 3px rgba(15,23,42,.12)}
 .pbtn .qbtn.plus{background:var(--primary);color:#fff}
-.pbtn .qnum{min-width:34px;text-align:center;font-weight:800;font-size:19px;color:var(--primary)}
+.pbtn .qnum{min-width:30px;text-align:center;font-weight:800;font-size:16px;color:var(--primary)}
+.pbtn .pqty .qin{width:52px;font-size:16px;padding:5px 2px;border-radius:9px}
+.pbtn .qdel{border:none;background:none;font-family:inherit;font-size:11px;color:#b91c1c;text-decoration:underline;cursor:pointer;padding:2px 0 2px 3px;white-space:nowrap}
 .qin{width:58px;text-align:center;font-weight:800;font-size:18px;color:var(--primary);border:1px solid var(--line);border-radius:10px;padding:8px 4px;background:#fff;font-family:inherit;outline:none}
 .qin:focus{border-color:var(--primary);box-shadow:0 0 0 2px rgba(15,118,110,.15)}
 .citem .qin{width:62px;font-size:16px;padding:7px 4px}
 .rund{font-size:11px;font-weight:700;color:#b45309;background:#fef3c7;border-radius:8px;padding:1px 6px;margin-left:5px;white-space:nowrap}
-.pbtn .qdel{border:none;background:none;font-family:inherit;font-size:13px;color:#b91c1c;text-decoration:underline;cursor:pointer;padding:3px 0 3px 6px;white-space:nowrap}
+/* หน้าต่างรายละเอียดสินค้า (แบบ Shopee) */
+.pdimg{height:150px;border-radius:14px;background:linear-gradient(135deg,#eef2ff,#f0fdfa);display:flex;align-items:center;justify-content:center;font-size:64px;overflow:hidden}
+.pdimg img{width:100%;height:100%;object-fit:cover}
+.pdprice{font-size:30px;font-weight:900;color:var(--primary);letter-spacing:-.5px;display:inline-block}
+.pdprice .u{font-size:14px;color:var(--muted);font-weight:700}
+.pdtags{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.pdtag{font-size:12.5px;font-weight:800;border-radius:8px;padding:4px 10px}
+.pdtag.full{background:#e6f4f2;color:#0f766e;border:1px dashed #5eead4}
+.pdtag.ws{background:#fef3c7;color:#92400e;border:1px dashed #fcd34d}
+.pdtag.opt{background:#dbeafe;color:#1e40af;border:1px dashed #93c5fd}
+.pdtag.st{background:#f1f5f9;color:#64748b}
+.pdrow{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13.5px;padding:9px 0;border-bottom:1px dashed var(--line)}
+.pdrow b{font-weight:800}
+.pdrow:last-child{border-bottom:none}
+.pdq{display:flex;align-items:center;gap:9px}
+.pdq .qbtn{width:44px;height:44px;border-radius:12px;border:none;font-size:23px;font-weight:800;font-family:inherit;line-height:1}
+.pdq .minus{background:#fff;color:#0f766e;border:2px solid #99f6e4}
+.pdq .plus{background:var(--primary);color:#fff}
+.pdq .qin{width:78px;font-size:21px;border:2px solid #99f6e4;border-radius:12px;padding:11px 2px}
 .tag-w{display:inline-block;background:var(--lowbg);color:#92400e;font-size:10px;font-weight:800;border-radius:99px;padding:1px 7px;margin-left:4px;vertical-align:middle}
-.tag-ws{display:inline-block;background:#fef3c7;color:#92400e;font-size:11.5px;font-weight:800;border-radius:99px;padding:3px 9px;margin-left:5px;vertical-align:middle;white-space:nowrap}
-.band-ws{background:#fffbeb;border:1px dashed #fcd34d;border-radius:10px;padding:5px 10px;margin-top:6px;font-size:12.5px;font-weight:700;color:#92400e}
+.tag-ws{display:inline-block;background:#fef3c7;color:#92400e;font-size:10.5px;font-weight:800;border-radius:99px;padding:2px 8px;margin-left:5px;vertical-align:middle;white-space:nowrap}
+.band-ws{background:#fffbeb;border:1px dashed #fcd34d;border-radius:9px;padding:4px 9px;margin-top:5px;font-size:11.5px;font-weight:700;color:#92400e}
 .srow.ws{border-left:4px solid #f59e0b;background:linear-gradient(90deg,#fffbeb,#fff 45%)}
-.pbtn.ws{border-left:4px solid #f59e0b}
 .pbtn .wprice{font-size:11px;color:var(--low);font-weight:700}
 /* แท็บสินค้าราคาส่ง */
 .wcard{background:linear-gradient(90deg,#fffbeb,#fff 40%);border:1px solid rgba(226,232,240,.85);border-left:4px solid #f59e0b;border-radius:14px;padding:11px;margin-bottom:9px;cursor:pointer}
@@ -475,6 +511,13 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
   <button data-view="Settings"><span class="ic">⚙️</span>ตั้งค่า</button>
 </nav>
 
+<div class="ov" id="ovProd"></div>
+<div class="sheet" id="sheetProd">
+  <h2><span id="pdTitle">สินค้า</span> <button class="x" id="xProd">✕</button></h2>
+  <div id="pdBody"></div>
+  <button class="btn" id="btnPdAdd">＋ ใส่ตะกร้า</button>
+</div>
+
 
 <div class="ov" id="ovForm"></div>
 <div class="sheet" id="sheetForm">
@@ -753,7 +796,7 @@ function setLive(){
     'โปรเจกต์: <b>' + esc(isLive ? cfg.projectId : '—') + '</b><br>' +
     'สินค้า: <b>' + products.length + '</b> รายการ · บิล: <b>' + orders.length + '</b> ใบ';
 }
-function renderAll(){ renderHead(); renderCats(); renderProducts(); renderCart(); renderStock(); renderWholesale(); renderHistory(); renderReport(); renderMonthReport(); renderSettings(); setLive(); }
+function renderAll(){ renderHead(); renderCats(); renderProducts(); renderCart(); renderStock(); renderWholesale(); renderProdSheet(); renderHistory(); renderReport(); renderMonthReport(); renderSettings(); setLive(); }
 function renderHead(){
   $('shopName').textContent = settings.shopName || 'ร้านของฉัน';
   var t = todayStats();
@@ -788,70 +831,6 @@ function stockClass(p){
   var s = n2(p.stock), low = p.lowStock == null ? 5 : n2(p.lowStock);
   if (s <= 0) return 'out'; if (s <= low) return 'low'; return '';
 }
-function renderProducts(){
-  var list = filteredProducts();
-  $('pempty').style.display = list.length ? 'none' : 'block';
-  $('pgrid').innerHTML = list.map(function(p){
-    var sc = stockClass(p);
-    var warn = (settings.warnLow !== '0');
-    var ic = p.image ? '<img src="' + esc(p.image) + '" alt="">' : '📦';
-    var q = cartQtyOfProduct(p.id);
-    var st = 'เหลือ ' + fmtQty(p.stock) + ' ' + esc(p.unit || 'ชิ้น');
-    if (sc && warn) st = (sc === 'out' ? '⚠️ หมดสต็อก' : '⚠️ ใกล้หมด ' + fmtQty(p.stock)) + ' ' + esc(p.unit || 'ชิ้น');
-    var ep = effectivePrice(p, q);
-    var unitTxt = esc(p.unit || 'ชิ้น');
-    var hasFull = n2(p.fullPrice) > 0;
-    var fullInfo = hasFull
-      ? '<div class="fullp">💰 ขายเต็ม' + (p.fullLabel ? ' (' + esc(p.fullLabel) + ')' : '') + ' ' + money(p.fullPrice) + '</div>'
-      : '';
-    var wInfo = n2(p.wholesalePrice) > 0
-      ? '<div class="band-ws">🏷️ ราคาส่ง ' + money(p.wholesalePrice) + ' · ตั้งแต่ ' + fmtQty(wholesaleMinOf(p)) + ' ' + esc(p.unit || 'ชิ้น') + (ep.wholesale ? ' ✅ ใช้ราคาส่งแล้ว' : '') + '</div>'
-      : '';
-    var qtyBar = q > 0
-      ? '<div class="pqty" data-qty="1">' +
-          '<button class="qbtn minus" data-act="minus" aria-label="ลด">−</button>' +
-          '<input class="qin" inputmode="decimal" value="' + fmtQty(q) + '" aria-label="จำนวน">' +
-          '<button class="qbtn plus" data-act="plus" aria-label="เพิ่ม">+</button>' +
-          '<span class="sp"></span>' +
-          '<button class="qdel" data-act="del">ลบออก</button>' +
-        '</div>'
-      : '';
-    return '<div class="pbtn' + (q > 0 ? ' in-cart' : '') + (n2(p.wholesalePrice) > 0 ? ' ws' : '') + '" data-id="' + esc(p.id) + '">' +
-      '<div class="ptop"><span class="pico">' + ic + '</span>' +
-      '<span class="body"><span class="nm">' + esc(p.name) + (n2(p.wholesalePrice) > 0 ? '<span class="tag-ws">🏷️ ราคาส่ง</span>' : '') + '</span>' +
-      '<span class="pr">' + (hasFull ? '<span class="k">ขายย่อย</span>' : '') + money(p.price) + ' <span class="u">/ ' + unitTxt + '</span></span>' +
-      fullInfo + '<span class="st ' + sc + '">' + st + '</span>' + wInfo + '</span></div>' + qtyBar + '</div>';
-  }).join('');
-  Array.prototype.forEach.call($('pgrid').querySelectorAll('.pbtn'), function(card){
-    var id = card.getAttribute('data-id');
-    card.onclick = function(ev){
-      var t = ev.target;
-      if (t && t.closest && (t.closest('.qbtn.minus') || t.closest('.qdel') || t.closest('.qin') || t.closest('[data-act]'))) return;
-      addToCart(id);
-    };
-    var minus = card.querySelector('.qbtn.minus'), plus = card.querySelector('.qbtn.plus'), del = card.querySelector('.qdel');
-    if (minus) minus.onclick = function(ev){ ev.stopPropagation(); var q = n2(cartQtyOfProduct(id)); setQty(id, q - 1); toast(q - 1 <= 0 ? '🗑️ เอาออกจากตะกร้าแล้ว' : '➖ ' + fmtQty(q - 1) + ' ชิ้น'); };
-    if (plus) plus.onclick = function(ev){ ev.stopPropagation(); addToCart(id); };
-    if (del) del.onclick = function(ev){ ev.stopPropagation(); setQty(id, 0); toast('🗑️ เอาออกจากตะกร้าแล้ว'); };
-    var qin = card.querySelector('.qin');
-    if (qin) {
-      var commit = function(){
-        var v = parseQty(qin.value);
-        if (v <= 0) { setQty(id, 0); toast('🗑️ เอาออกจากตะกร้าแล้ว'); }
-        else { setQty(id, v); toast('✏️ ตั้งจำนวน ' + fmtQty(v) + ' ' + (prod ? (prod.unit || 'ชิ้น') : '')); }
-      };
-      var prod = products.find(function(x){ return x.id === id; });
-      qin.onclick = function(ev){ ev.stopPropagation(); };
-      qin.onfocus = function(){ qin.select(); };
-      qin.onchange = commit;
-      qin.onkeydown = function(ev){ if (ev.key === 'Enter') { ev.preventDefault(); qin.blur(); } };
-    }
-  });
-}
-
-// ---------- รหัสสินค้า / ตัวเลือก (หลายสี หลายรหัส) ----------
-// หมายเหตุ: ตัวเลือกใช้ “บันทึก/แสดงในหมวดสินค้า” เท่านั้น — ตอนขายแตะสินค้า = ลงตะกร้าเลย ไม่มีหน้าต่างให้เลือก
-// (ถ้าต้องการให้เลือกสีตอนขายกลับมา: เพิ่ม sheet + ปุ่มเรียก openPick แล้วให้ addToCart(id, code) อีกครั้ง)
 function optionsOf(p){ return (p && p.options && p.options.length) ? p.options : []; }
 function hasOptions(p){ return optionsOf(p).length > 0; }
 function optionOf(p, code){
@@ -886,6 +865,117 @@ function optionChips(p){
     return esc(o.label || o.code || '-') + (o.label && o.code ? ' (' + esc(o.code) + ')' : '');
   }).join(' · ');
 }
+function cartKeyOfProduct(id){
+  var ks = Object.keys(cart).filter(function(k){ return splitKey(k).id === id && n2(cart[k]) > 0; });
+  return ks.length ? ks[0] : optKey(id, '');
+}
+function renderProducts(){
+  var list = filteredProducts();
+  $('pempty').style.display = list.length ? 'none' : 'block';
+  $('pgrid').innerHTML = list.map(function(p){
+    var sc = stockClass(p);
+    var warn = (settings.warnLow !== '0');
+    var ic = p.image ? '<img src="' + esc(p.image) + '" alt="">' : '📦';
+    var q = cartQtyOfProduct(p.id);
+    var unitTxt = esc(p.unit || 'ชิ้น');
+    var ep = effectivePrice(p, q);
+    var st = 'เหลือ ' + fmtQty(p.stock) + ' ' + unitTxt;
+    if (sc && warn) st = (sc === 'out' ? '⚠️ หมดสต็อก' : '⚠️ ใกล้หมด ' + fmtQty(p.stock) + ' ' + unitTxt);
+    var bdg = sc === 'out'
+      ? '<span class="bdg out">หมด</span>'
+      : (n2(p.wholesalePrice) > 0 ? '<span class="bdg">ยกแพ็ค</span>' : '');
+    var tags = '';
+    if (n2(p.fullPrice) > 0) tags += '<span class="tag2 full">💰 ' + (p.fullLabel ? esc(p.fullLabel) + ' ' : 'เต็ม ') + money(p.fullPrice) + '</span>';
+    if (n2(p.wholesalePrice) > 0) tags += '<span class="tag2 ws">🏷️ ส่ง ' + money(p.wholesalePrice) + ' · ' + fmtQty(wholesaleMinOf(p)) + '+' + (ep.wholesale ? ' ✅' : '') + '</span>';
+    if (hasOptions(p)) tags += '<span class="tag2 opt">🏷️ ' + optionsOf(p).length + ' รหัส</span>';
+    var qtyBar = q > 0
+      ? '<div class="pqty" data-qty="1">' +
+          '<button class="qbtn minus" data-act="minus" aria-label="ลด">−</button>' +
+          '<input class="qin" data-act="qin" inputmode="decimal" value="' + fmtQty(q) + '" aria-label="จำนวน">' +
+          '<button class="qbtn plus" data-act="plus" aria-label="เพิ่ม">+</button>' +
+        '</div>'
+      : '<span class="addfab" data-act="add" aria-label="ใส่ตะกร้า">＋</span>';
+    return '<div class="pbtn' + (q > 0 ? ' in-cart' : '') + (n2(p.wholesalePrice) > 0 ? ' ws' : '') + '" data-id="' + esc(p.id) + '">' +
+      '<div class="pimg">' + ic + (q > 0 ? '<span class="qb">' + fmtQty(q) + '</span>' : '') + bdg + '</div>' +
+      '<div class="pbd">' +
+        '<div class="nm">' + esc(p.name) + '</div>' +
+        '<div class="pr">' + money(p.price) + ' <span class="u">/ ' + unitTxt + '</span></div>' +
+        (tags ? '<div class="tags">' + tags + '</div>' : '') +
+        '<div class="st ' + sc + '">' + st + '</div>' +
+        qtyBar +
+      '</div></div>';
+  }).join('');
+  Array.prototype.forEach.call($('pgrid').querySelectorAll('.pbtn'), function(card){
+    var id = card.getAttribute('data-id');
+    var prod = products.find(function(x){ return x.id === id; });
+    card.onclick = function(ev){
+      var t = ev.target;
+      if (t && t.closest && t.closest('[data-act]')) return;
+      openProd(id);
+    };
+    Array.prototype.forEach.call(card.querySelectorAll('[data-act]'), function(b){
+      var act = b.getAttribute('data-act');
+      if (act === 'qin') {
+        var commit = function(){
+          var v = parseQty(b.value);
+          if (v <= 0) { setQty(cartKeyOfProduct(id), 0); toast('🗑️ เอาออกจากตะกร้าแล้ว'); }
+          else { setQty(cartKeyOfProduct(id), v); toast('✏️ ตั้งจำนวน ' + fmtQty(v) + ' ' + (prod ? (prod.unit || 'ชิ้น') : '')); }
+        };
+        b.onclick = function(ev){ ev.stopPropagation(); };
+        b.onfocus = function(){ b.select(); };
+        b.onchange = commit;
+        b.onkeydown = function(ev){ if (ev.key === 'Enter') { ev.preventDefault(); b.blur(); } };
+        return;
+      }
+      b.onclick = function(ev){
+        ev.stopPropagation();
+        if (act === 'minus') { var q = n2(cartQtyOfProduct(id)); setQty(cartKeyOfProduct(id), q - 1); toast(q - 1 <= 0 ? '🗑️ เอาออกจากตะกร้าแล้ว' : '➖ ' + fmtQty(q - 1) + ' ' + (prod ? (prod.unit || '') : '')); }
+        else if (act === 'plus' || act === 'add') addToCart(id);
+      };
+    });
+  });
+}
+// ---------- หน้าต่างรายละเอียดสินค้า (แบบ Shopee) ----------
+var prodTarget = null;
+function openProd(id){ prodTarget = id; renderProdSheet(); openSheet('Prod', true); }
+function closeProd(){ openSheet('Prod', false); }
+function renderProdSheet(){
+  if (!$('pdBody') || !prodTarget) return;
+  var p = products.find(function(x){ return x.id === prodTarget; });
+  if (!p) { closeProd(); return; }
+  var unit = esc(p.unit || 'ชิ้น'), sc = stockClass(p);
+  var q = cartQtyOfProduct(p.id), ep = effectivePrice(p, q);
+  $('pdTitle').textContent = p.name;
+  var ic = p.image ? '<img src="' + esc(p.image) + '" alt="">' : '📦';
+  var tags = '';
+  if (n2(p.fullPrice) > 0) tags += '<span class="pdtag full">💰 ขายเต็ม' + (p.fullLabel ? ' (' + esc(p.fullLabel) + ')' : '') + ' ' + money(p.fullPrice) + '</span>';
+  if (n2(p.wholesalePrice) > 0) tags += '<span class="pdtag ws">🏷️ ราคาส่ง ' + money(p.wholesalePrice) + ' · ตั้งแต่ ' + fmtQty(wholesaleMinOf(p)) + ' ' + unit + (ep.wholesale ? ' ✅' : '') + '</span>';
+  if (hasOptions(p)) tags += '<span class="pdtag opt">🏷️ ' + optionChips(p) + '</span>';
+  tags += '<span class="pdtag st">' + (sc === 'out' ? '⚠️ หมดสต็อก' : (sc === 'low' ? '⚠️ ใกล้หมด · เหลือ ' : 'เหลือ ') + fmtQty(p.stock) + ' ' + unit) + '</span>';
+  var rows = '';
+  if (p.category) rows += '<div class="pdrow"><span>หมวดหมู่</span><b>' + esc(p.category) + '</b></div>';
+  rows += '<div class="pdrow"><span>ราคาขายย่อย (คิดเงินจริง)</span><b class="pdprice">' + money(p.price) + ' <span class="u">/ ' + unit + '</span></b></div>';
+  if (n2(p.fullPrice) > 0) rows += '<div class="pdrow"><span>ราคาขายเต็ม' + (p.fullLabel ? ' (' + esc(p.fullLabel) + ')' : '') + '</span><b>' + money(p.fullPrice) + '</b></div>';
+  if (n2(p.wholesalePrice) > 0) rows += '<div class="pdrow"><span>ราคาส่ง · ตั้งแต่ ' + fmtQty(wholesaleMinOf(p)) + ' ' + unit + '</span><b>' + money(p.wholesalePrice) + '</b></div>';
+  if (p.note) rows += '<div class="pdrow"><span>หมายเหตุ</span><b>' + esc(p.note) + '</b></div>';
+  $('pdBody').innerHTML = '<div class="pdimg">' + ic + '</div><div class="pdtags">' + tags + '</div>' +
+    '<div style="margin-top:6px">' + rows + '</div>' +
+    '<div class="pdrow" style="border:none;padding-bottom:4px"><span style="font-weight:700">จำนวน</span>' +
+      '<div class="pdq"><button class="qbtn minus" data-act="minus">−</button>' +
+      '<input class="qin" inputmode="decimal" value="' + fmtQty(q) + '" aria-label="จำนวน">' +
+      '<button class="qbtn plus" data-act="plus">+</button></div></div>' +
+    '<div class="totline big" style="margin-top:0"><span>ยอดสินค้านี้</span><span class="r">' + money(q > 0 ? lineAmount(ep.price, q) : 0) + '</span></div>' +
+    (q > 0 && ep.wholesale ? '<div class="hint-note" style="margin-top:4px">✅ ใช้ราคาส่ง ' + money(ep.price) + ' (ครบขั้นต่ำแล้ว)</div>' : '') +
+    (q > 0 && isRounded(ep.price, q) ? '<div class="hint-note" style="margin-top:4px">💰 ปัดเศษขึ้นจาก ' + fmt(n2(ep.price) * q) + ' เป็นจำนวนเต็มบาท</div>' : '');
+  $('btnPdAdd').textContent = q > 0 ? '✅ เสร็จแล้ว (ในตะกร้า ' + fmtQty(q) + ' ' + unit + ')' : '＋ ใส่ตะกร้า';
+  $('btnPdAdd').onclick = function(){ if (n2(cartQtyOfProduct(p.id)) > 0) closeProd(); else addToCart(p.id); };
+  $('pdBody').querySelector('[data-act="minus"]').onclick = function(){ setQty(cartKeyOfProduct(p.id), n2(cartQtyOfProduct(p.id)) - 1); };
+  $('pdBody').querySelector('[data-act="plus"]').onclick = function(){ addToCart(p.id); };
+  var qin = $('pdBody').querySelector('.qin');
+  qin.onfocus = function(){ qin.select(); };
+  qin.onchange = function(){ setQty(cartKeyOfProduct(p.id), parseQty(qin.value)); };
+  qin.onkeydown = function(ev){ if (ev.key === 'Enter') { ev.preventDefault(); qin.blur(); } };
+}
 function addToCart(id, code){
   var p = products.find(function(x){ return x.id === id; });
   if (!p) return;
@@ -894,7 +984,7 @@ function addToCart(id, code){
     if (!confirm('“' + optLineName(p, code) + '” เหลือสต็อก ' + fmtQty(p.stock) + ' ' + (p.unit||'ชิ้น') + '\nขายเกินสต็อกหรือไม่?')) return;
   }
   cart[key] = cur + 1;
-  renderProducts(); renderWholesale(); renderCart(); updateCartBar();
+  renderProducts(); renderWholesale(); renderCart(); renderProdSheet(); updateCartBar();
   toast('➕ ' + optLineName(p, code) + ' ×' + fmtQty(cart[key]));
 }
 function wholesaleMinOf(p){ var m = n2(p.wholesaleMin); return m > 0 ? m : 12; }
@@ -1007,7 +1097,7 @@ function updateCartBar(){
 function setQty(key, q){
   q = n2(q);
   if (q <= 0) delete cart[key]; else cart[key] = q;
-  renderProducts(); renderWholesale(); renderCart(); updateCartBar();
+  renderProducts(); renderWholesale(); renderCart(); renderProdSheet(); updateCartBar();
 }
 function renderQr(t){
   // ปิดใช้งาน QR พร้อมเพย์แล้ว (ร้านเลือกบันทึกเป็น “โอน” เฉย ๆ ไม่ต้องมี QR)
@@ -1442,6 +1532,8 @@ $('btnAddFromWs').onclick = function(){ openProductForm(null); };
 $('wq').oninput = function(){ renderWholesale(); };
 // สรุปแบ่งเดือน
 $('btnAddOpt').onclick = function(){ var r = addOptRow('', ''); r.querySelector('.oCode').focus(); };
+$('xProd').onclick = closeProd;
+$('ovProd').onclick = closeProd;
 $('mSel').onchange = function(){ mSel = $('mSel').value; renderMonthReport(); };
 $('mPrev').onclick = function(){ mSel = shiftMonth(mSel || currentMonthKey(), -1); renderMonthReport(); };
 $('mNext').onclick = function(){ mSel = shiftMonth(mSel || currentMonthKey(), 1); renderMonthReport(); };

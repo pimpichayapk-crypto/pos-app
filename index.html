@@ -62,6 +62,44 @@ header .sub{opacity:.9;font-size:12px;margin-top:2px}
 .chip .cnt{display:inline-block;margin-left:6px;background:rgba(15,23,42,.10);border-radius:99px;padding:0 6px;font-size:11px;font-weight:800}
 .chip.active .cnt{background:rgba(255,255,255,.3)}
 
+/* โทนสีส้ม Shopee (เปิดใช้ได้ในหน้าตั้งค่า) */
+html.shopee{--primary:#ee4d2d;--primary2:#f53d2d;--bg:#f5f5f5;--line:#eaeaea;--okbg:#e6f4f2}
+html.shopee .stabs button.on{color:#ee4d2d;border-bottom-color:#ee4d2d}
+html.shopee .shophead{background:linear-gradient(160deg,#f53d2d,#ee4d2d)}
+html.shopee .tabbar button.on{color:#ee4d2d;background:#fdece7}
+html.shopee .tabbar button.on::before{background:#ee4d2d}
+html.shopee .pbtn .pr{color:#ee4d2d}
+html.shopee .pbtn .pimg .qb{background:#ee4d2d}
+html.shopee .pbtn .addfab{background:#ee4d2d;box-shadow:0 3px 10px rgba(238,77,45,.35)}
+html.shopee .pbtn .tag2.ws{background:#fff3e0;color:#c2410c;border-color:#fdba74}
+html.shopee .pbtn .pimg .bdg{background:#ee4d2d;color:#fff}
+html.shopee .btn{background:#ee4d2d}
+html.shopee .btnPdAdd{background:#ee4d2d}
+/* หัวร้าน (แบบ Shopee) */
+.thbtns{display:flex;gap:9px}
+.thbtn{flex:1;border:2px solid var(--line);background:var(--card);border-radius:12px;padding:11px 8px;font-family:inherit;font-size:13px;font-weight:800;color:var(--muted);cursor:pointer}
+.thbtn.on{border-color:var(--primary);color:var(--primary);background:#e6f4f2}
+html.shopee .thbtn.on{border-color:#ee4d2d;color:#ee4d2d;background:#fdece7}
+#viewSell .shophead{margin:0 -12px 0;padding:15px 14px 17px;border-radius:0 0 20px 20px}
+#viewSell .stabs{margin:0 -12px;padding:0 12px}
+.shophead{background:linear-gradient(160deg,var(--primary2),var(--primary));padding:14px 14px 16px;color:#fff;border-radius:0 0 18px 18px;margin-bottom:2px}
+.shoprow{display:flex;align-items:center;gap:11px}
+.shoplogo{width:46px;height:46px;border-radius:99px;background:rgba(255,255,255,.22);border:2px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-size:23px;flex-shrink:0}
+.shopinfo{flex:1;min-width:0}
+.shopinfo .sn{font-size:17px;font-weight:800;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shopinfo .ss{font-size:11.5px;opacity:.9;font-weight:700;margin-top:3px}
+.shopsearch{margin-top:12px;background:#fff;border-radius:12px;display:flex;align-items:center;gap:8px;padding:0 12px}
+.shopsearch .ic{font-size:15px;opacity:.7}
+.shopsearch input{flex:1;border:none;outline:none;background:none;font-family:inherit;font-size:15px;padding:14px 0;color:var(--text)}
+/* แท็บในร้าน (แบบ Shopee) */
+.stabs{display:flex;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:12}
+.stabs button{flex:1;border:none;background:none;font-family:inherit;font-size:14px;font-weight:800;color:var(--muted);padding:13px 4px 11px;border-bottom:3px solid transparent;cursor:pointer}
+.stabs button.on{color:var(--primary);border-bottom-color:var(--primary)}
+/* หัวข้อหมวดในรายการสินค้า */
+.cgrp{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 4px 8px}
+.cgrp .t{font-size:14.5px;font-weight:800}
+.cgrp .n{font-size:11.5px;font-weight:800;color:var(--muted)}
+.cgrp .go{font-size:12px;font-weight:800;color:var(--primary);text-decoration:underline;background:none;border:none;font-family:inherit;cursor:pointer}
 /* หน้ารวมหมวดหมู่ (ชั้น 1 ของแท็บ ปลีก) */
 .cathead{font-size:12.5px;font-weight:700;color:var(--muted);padding:12px 4px 8px}
 .catgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -82,15 +120,15 @@ header .sub{opacity:.9;font-size:12px;margin-top:2px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;align-items:start}
 .pbtn{background:var(--card);border:1px solid rgba(226,232,240,.85);border-radius:14px;overflow:hidden;position:relative;text-align:left;cursor:pointer;font-family:inherit;box-shadow:0 1px 3px rgba(15,23,42,.06);color:var(--text);width:100%;padding:0;display:block}
 .pbtn:active{background:#f8fafc}
-.pbtn .pimg{height:110px;background:linear-gradient(135deg,#eef2ff,#f0fdfa);display:flex;align-items:center;justify-content:center;font-size:42px;position:relative;overflow:hidden}
+.pbtn .pimg{height:150px;background:linear-gradient(135deg,#eef2ff,#f0fdfa);display:flex;align-items:center;justify-content:center;font-size:54px;position:relative;overflow:hidden}
 .pbtn .pimg img{width:100%;height:100%;object-fit:cover}
 .pbtn .pimg .qb{position:absolute;top:6px;right:6px;background:var(--primary);color:#fff;font-size:11px;font-weight:800;border-radius:99px;min-width:22px;height:22px;display:flex;align-items:center;justify-content:center;padding:0 6px}
 .pbtn .pimg .bdg{position:absolute;top:6px;left:6px;background:#fef3c7;color:#92400e;font-size:9.5px;font-weight:800;border-radius:5px;padding:2px 6px;margin:0}
 .pbtn .pimg .bdg.out{background:#fee2e2;color:#b91c1c}
 .pbtn .pbd{padding:8px 9px 10px}
 .pbtn .ptop{display:block}
-.pbtn .nm{font-weight:700;font-size:13px;line-height:1.35;height:35px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;white-space:normal}
-.pbtn .pr{color:var(--primary);font-weight:900;font-size:18px;margin-top:5px;display:block;letter-spacing:-.3px}
+.pbtn .nm{font-weight:700;font-size:13.5px;line-height:1.35;height:37px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;white-space:normal}
+.pbtn .pr{color:var(--primary);font-weight:900;font-size:20px;margin-top:6px;display:block;letter-spacing:-.4px}
 .pbtn .pr .k{font-size:10.5px;font-weight:700;color:var(--muted);margin-right:3px;letter-spacing:0}
 .pbtn .pr .u{font-size:11px;font-weight:700;color:var(--muted)}
 .pbtn .tags{margin-top:5px;display:flex;gap:4px;flex-wrap:wrap}
@@ -385,9 +423,24 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
 
   <!-- ================= ขาย ================= -->
   <section class="view" id="viewSell">
-    <div class="toolbar">
-      <div class="searchwrap"><span class="ic">🔍</span><input id="q" type="search" placeholder="ค้นหาสินค้า / รหัส"></div>
-      <button class="chip" id="btnClearCart" style="padding:11px 14px">🧹 ล้างตะกร้า</button>
+    <!-- หัวร้าน (แบบ Shopee) -->
+    <div class="shophead">
+      <div class="shoprow">
+        <div class="shoplogo" id="shLogo">🧵</div>
+        <div class="shopinfo">
+          <div class="sn" id="shName">ร้านค้า</div>
+          <div class="ss" id="shSub">—</div>
+        </div>
+        <button class="chip" id="btnClearCart" style="padding:9px 12px;background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.35);color:#fff">🧹 ล้างตะกร้า</button>
+      </div>
+      <div class="shopsearch">
+        <span class="ic">🔍</span><input id="q" type="search" placeholder="ค้นหาสินค้า / รหัส ในร้าน">
+      </div>
+    </div>
+    <!-- แท็บในร้าน (แบบ Shopee) -->
+    <div class="stabs" id="sellTabs">
+      <button data-tab="prod" class="on">🛍️ สินค้า</button>
+      <button data-tab="cat">🗂️ หมวดหมู่</button>
     </div>
     <!-- ชั้น 1: รวมหมวดหมู่ -->
     <div id="catScreen">
@@ -402,7 +455,7 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
         <div><div class="sh-t" id="shTitle">สินค้า</div><div class="sh-c" id="shCount"></div></div>
       </div>
       <div class="chips" id="cats"></div>
-      <div class="grid" id="pgrid"></div>
+      <div id="pgrid"></div>
       <div class="empty" id="pempty" style="display:none">ไม่พบสินค้า<br><button class="chip" id="btnAddFromSell" style="padding:9px 14px;margin-top:10px">➕ เพิ่มสินค้าใหม่</button></div>
     </div>
   </section>
@@ -496,6 +549,13 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
           <option value="l6080">สติกเกอร์ 60×80mm — ใบเสร็จย่อ + รายการ</option>
           <option value="l100150">สติกเกอร์ 100×150mm (4×6") — ใบเสร็จเต็ม</option>
         </select></div>
+      <div class="fld"><label>ธีมสีแอพ</label>
+        <div class="thbtns" id="thBtns">
+          <button class="thbtn" data-th="green">🟢 เขียวร้าน (เดิม)</button>
+          <button class="thbtn" data-th="shopee">🟠 ส้ม Shopee</button>
+        </div>
+        <div class="hint-note" style="margin-top:6px">โทนส้ม = หน้าตาแบบ Shopee (หัวร้าน/ราคา/ปุ่มเป็นสีส้ม) — เปลี่ยนได้ทันทีไม่กระทบข้อมูล</div>
+      </div>
       <div class="fld"><label>เตือนเมื่อสต็อกต่ำกว่าเกณฑ์</label>
         <select id="sWarn"><option value="1">เตือน</option><option value="0">ไม่ต้องเตือน</option></select></div>
       <button class="btn" id="btnSaveSettings">💾 บันทึกการตั้งค่า</button>
@@ -670,7 +730,12 @@ var cart = {};             // id -> qty
 var payMethod = 'cash';
 var currentOrder = null;   // บิลที่เปิดดูอยู่
 var filterCat = 'all', hRange = 'today', rRange = 'today';
-var sellCat = null, sellSub = '';   // ชั้นของแท็บ ปลีก: null = หน้ารวมหมวด
+var sellCat = null, sellSub = '';   // ชั้นของแท็บ ปลีก
+var sellTab = 'prod';               // 'prod' = รายการสินค้า (แยกหมวด) · 'cat' = การ์ดหมวดหมู่
+function setSellTab(t){
+  sellTab = t;
+  if ($('sellTabs')) Array.prototype.forEach.call($('sellTabs').querySelectorAll('button'), function(x){ x.classList.toggle('on', x.getAttribute('data-tab') === t); });
+}
 var useLocal = !isLive;    // โหมดตัวอย่าง (เก็บใน localStorage)
 var LS = { p: 'pos_products', o: 'pos_orders', s: 'pos_settings', m: 'pos_months' };
 
@@ -921,12 +986,23 @@ function sellTitleText(){
   if (sellCat === '__all') return '📋 สินค้าทั้งหมด';
   return sellCat ? (catIcon(sellCat) + ' ' + sellCat) : 'สินค้า';
 }
+function renderShopHead(){
+  if (!$('shName')) return;
+  var name = String(settings.shopName || 'ร้านค้า').trim() || 'ร้านค้า';
+  $('shName').textContent = name;
+  $('shLogo').textContent = name.charAt(0) || '🧵';
+  $('shSub').textContent = products.length + ' รายการ · ' + catList().length + ' หมวด' + (settings.seller ? ' · ผู้ขาย ' + settings.seller : '');
+}
 function renderSell(){
   var q = ($('q').value || '').trim();
-  var showCats = !q && !sellCat;
+  var showCats = (sellTab === 'cat') && !q;
   if ($('catScreen')) $('catScreen').style.display = showCats ? 'block' : 'none';
   if ($('prodScreen')) $('prodScreen').style.display = showCats ? 'none' : 'block';
+  renderShopHead();
   if (showCats) { renderCatGrid(); renderProducts(); return; }
+  var grouped = !q && !sellCat;
+  var head = $('prodScreen') ? $('prodScreen').querySelector('.sellhead') : null;
+  if (head) head.style.display = grouped ? 'none' : 'flex';
   var inCat = products.filter(function(p){ return (sellCat && sellCat !== '__all') ? catNameOf(p) === sellCat : true; });
   var subs = (!q && sellCat && sellCat !== '__all') ? subTokensOf(inCat) : [];
   var subHtml = '';
@@ -959,12 +1035,12 @@ function renderCatGrid(){
   Array.prototype.forEach.call($('catGrid').querySelectorAll('.cat'), function(b){
     b.onclick = function(){
       var c = b.getAttribute('data-cat');
-      if (c === '__all') { sellCat = '__all'; sellSub = ''; renderSell(); window.scrollTo(0, 0); }
+      if (c === '__all') { setSellTab('prod'); sellCat = '__all'; sellSub = ''; renderSell(); window.scrollTo(0, 0); }
       else openCatPick(c);      // กดหมวด → เด้งชีตตัวเลือกสินค้าในหมวด
     };
   });
 }
-function backToCats(){ sellCat = null; sellSub = ''; $('q').value = ''; renderSell(); window.scrollTo(0, 0); }
+function backToCats(){ setSellTab('prod'); sellCat = null; sellSub = ''; $('q').value = ''; renderSell(); window.scrollTo(0, 0); }
 function renderCats(){ renderSell(); }
 function isWholesaleQuery(q){ return q === 'ยกแพ็ค' || q === 'ยกแพค' || q === 'แพ็ค' || q === 'แพค' || q === 'ส่ง' || q === 'ราคาส่ง' || q === 'ราคาโหล' || q === 'โหล' || q === 'wholesale' || q === 'ws'; }
 function filteredProducts(){
@@ -1021,11 +1097,13 @@ function cartKeyOfProduct(id){
 }
 function renderProducts(){
   var list = filteredProducts();
+  var qtxt = ($('q').value || '').trim();
+  var grouped = !qtxt && !sellCat && sellTab === 'prod';   // หน้าแรก: ทุกหมวดต่อกันแบบ Shopee
   $('pempty').style.display = list.length ? 'none' : 'block';
-  $('pgrid').innerHTML = list.map(function(p){
+  function cardOf(p){
     var sc = stockClass(p);
     var warn = (settings.warnLow !== '0');
-    var ic = p.image ? '<img src="' + esc(p.image) + '" alt="">' : '📦';
+    var ic = p.image ? '<img src="' + esc(p.image) + '" alt="">' : catIcon(catNameOf(p));
     var q = cartQtyOfProduct(p.id);
     var unitTxt = esc(p.unit || 'ชิ้น');
     var ep = effectivePrice(p, q);
@@ -1054,7 +1132,24 @@ function renderProducts(){
         '<div class="st ' + sc + '">' + st + '</div>' +
         qtyBar +
       '</div></div>';
-  }).join('');
+  }
+  var html;
+  if (grouped) {
+    html = catList().map(function(c){
+      var items = list.filter(function(p){ return catNameOf(p) === c.name; });
+      if (!items.length) return '';
+      return '<div class="cgrp"><span class="t">' + catIcon(c.name) + ' ' + esc(c.name) + '</span>' +
+        '<span class="n">' + items.length + ' รายการ</span>' +
+        '<button class="go" data-cat="' + esc(c.name) + '">ดูทั้งหมวด ›</button></div>' +
+        '<div class="grid">' + items.map(cardOf).join('') + '</div>';
+    }).join('');
+  } else {
+    html = '<div class="grid">' + list.map(cardOf).join('') + '</div>';
+  }
+  $('pgrid').innerHTML = html;
+  Array.prototype.forEach.call($('pgrid').querySelectorAll('.cgrp .go'), function(b){
+    b.onclick = function(){ openCatPick(b.getAttribute('data-cat')); };
+  });
   Array.prototype.forEach.call($('pgrid').querySelectorAll('.pbtn'), function(card){
     var id = card.getAttribute('data-id');
     var prod = products.find(function(x){ return x.id === id; });
@@ -1166,6 +1261,7 @@ function renderCatPick(){
   $('btnPkCards').textContent = '📋 ดูเป็นรายการการ์ด ›';
   $('btnPkCards').onclick = function(){
     var c = pickCat, g = pickGroup; closeCatPick();
+    setSellTab('prod');
     sellCat = (c === '__all') ? '__all' : c; sellSub = g || ''; $('q').value = ''; renderSell(); window.scrollTo(0, 0);
   };
   Array.prototype.forEach.call($('pkBody').querySelectorAll('.pkchip'), function(b){
@@ -2202,6 +2298,7 @@ function renderSettings(){
   setIf('sFoot', settings.footer || '');
   if (!f || f.id !== 'sWarn') $('sWarn').value = settings.warnLow === '0' ? '0' : '1';
   renderPaperSeg();
+  applyTheme(settings.theme);
 }
 
 // ---------- sheets ----------
@@ -2216,7 +2313,24 @@ $('xOrder').onclick = function(){ openSheet('Order', false); };
 $('ovOrder').onclick = function(){ openSheet('Order', false); };
 $('btnClearCart').onclick = function(){ if (!Object.keys(cart).length) return; if (!confirm('ล้างตะกร้าทั้งหมด?')) return; cart = {}; $('discount').value=''; $('received').value=''; renderProducts(); renderCart(); };
 $('q').oninput = function(){ sellSub = ''; renderSell(); };
+function applyTheme(t){
+  var th = (t === 'shopee') ? 'shopee' : 'green';
+  document.documentElement.classList.toggle('shopee', th === 'shopee');
+  if ($('thBtns')) Array.prototype.forEach.call($('thBtns').querySelectorAll('.thbtn'), function(b){ b.classList.toggle('on', b.getAttribute('data-th') === th); });
+}
 $('btnBackCat').onclick = backToCats;
+Array.prototype.forEach.call($('thBtns').querySelectorAll('.thbtn'), function(b){
+  b.onclick = function(){
+    var th = b.getAttribute('data-th');
+    applyTheme(th);
+    settings.theme = th;
+    S.saveSettings({ theme: th }).catch(function(){});
+    toast(th === 'shopee' ? '🟠 เปลี่ยนเป็นโทนส้ม Shopee แล้ว' : '🟢 กลับโทนเขียวร้านแล้ว');
+  };
+});
+Array.prototype.forEach.call($('sellTabs').querySelectorAll('button'), function(b){
+  b.onclick = function(){ setSellTab(b.getAttribute('data-tab')); sellCat = null; sellSub = ''; renderSell(); window.scrollTo(0, 0); };
+});
 $('btnAddFromCat').onclick = function(){ openProductForm(null); };
 $('hq').oninput = function(){ renderHistory(); };
 $('discount').oninput = function(){ renderCart(); };

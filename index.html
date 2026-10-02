@@ -128,6 +128,22 @@ header .sub{opacity:.9;font-size:12px;margin-top:2px}
 .pdrow{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13.5px;padding:9px 0;border-bottom:1px dashed var(--line)}
 .pdrow b{font-weight:800}
 .pdrow:last-child{border-bottom:none}
+#sheetPick2{display:flex;flex-direction:column;max-height:88vh;overflow:hidden}
+#sheetPick2 #pkBody{overflow-y:auto;flex:1;min-height:0;padding-bottom:6px;-webkit-overflow-scrolling:touch}
+#sheetPick2 .btn,#sheetPick2 .pkview{flex-shrink:0}
+.pkview{text-align:center;font-size:12.5px;font-weight:800;color:var(--primary);padding:11px 0 3px;text-decoration:underline;cursor:pointer}
+.pkgrp{font-size:12px;font-weight:800;color:var(--muted);margin:13px 0 8px;letter-spacing:.2px}
+.pkgrp:first-child{margin-top:2px}
+.pkchips{display:flex;flex-wrap:wrap;gap:9px}
+.pkchip{position:relative;border:2px solid var(--line);background:#fff;border-radius:12px;padding:9px 13px;font-family:inherit;cursor:pointer;text-align:left;min-width:106px;color:var(--text);max-width:100%}
+.pkchip b{font-size:13.5px;font-weight:800;display:block;line-height:1.3}
+.pkchip .pc2{font-size:11.5px;color:var(--muted);font-weight:700;margin-top:3px;display:block}
+.pkchip.on{border-color:var(--primary);background:#e6f4f2}
+.pkchip.on b{color:var(--primary)}
+.pkchip.on::after{content:'✓';position:absolute;top:-8px;right:-8px;width:20px;height:20px;border-radius:99px;background:var(--primary);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.pkchip .pcb{font-size:10px;color:var(--primary);font-weight:800;margin-top:3px;display:block}
+.pksel{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:13px;font-size:13px;font-weight:700}
+.pksel .pkp{color:var(--primary);font-weight:900;font-size:19px}
 .pdsec{margin-top:11px;border-top:1px dashed var(--line);padding-top:11px}
 .pdsec-h{font-size:13.5px;font-weight:800;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .pdsec-h .sel{font-size:11.5px;font-weight:800;color:var(--primary)}
@@ -551,6 +567,14 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
   <button data-view="Settings"><span class="ic">⚙️</span>ตั้งค่า</button>
 </nav>
 
+<div class="ov" id="ovPick2"></div>
+<div class="sheet" id="sheetPick2">
+  <h2><span id="pkTitle">เลือกสินค้า</span> <button class="x" id="xPick2">✕</button></h2>
+  <div id="pkBody"></div>
+  <button class="btn" id="btnPkAdd">🛒 เพิ่มไปยังตะกร้า</button>
+  <div class="pkview" id="btnPkCards">📋 ดูเป็นรายการการ์ด ›</div>
+</div>
+
 <div class="ov" id="ovProd"></div>
 <div class="sheet" id="sheetProd">
   <h2><span id="pdTitle">สินค้า</span> <button class="x" id="xProd">✕</button></h2>
@@ -927,7 +951,11 @@ function renderCatGrid(){
   $('catGrid').innerHTML = html;
   $('catCount').textContent = 'แตะหมวดเพื่อดูสินค้าในหมวดนั้น · ' + total + ' รายการ · ' + cats.length + ' หมวด';
   Array.prototype.forEach.call($('catGrid').querySelectorAll('.cat'), function(b){
-    b.onclick = function(){ sellCat = b.getAttribute('data-cat'); sellSub = ''; renderSell(); window.scrollTo(0, 0); };
+    b.onclick = function(){
+      var c = b.getAttribute('data-cat');
+      if (c === '__all') { sellCat = '__all'; sellSub = ''; renderSell(); window.scrollTo(0, 0); }
+      else openCatPick(c);      // กดหมวด → เด้งชีตตัวเลือกสินค้าในหมวด
+    };
   });
 }
 function backToCats(){ sellCat = null; sellSub = ''; $('q').value = ''; renderSell(); window.scrollTo(0, 0); }
@@ -1059,6 +1087,78 @@ function cartCodeOfProduct(id){
 }
 function openProd(id){ prodTarget = id; pdPick = pdLast[id] || cartCodeOfProduct(id); renderProdSheet(); openSheet('Prod', true); }
 function closeProd(){ openSheet('Prod', false); }
+// ---------- ชีตเลือกสินค้าในหมวด (กดหมวด → เด้งตัวเลือกขึ้นมา) ----------
+var pickCat = null, pkPick = '';
+function catProducts(cat){ return products.filter(function(p){ return catNameOf(p) === cat; }); }
+function openCatPick(cat){ pickCat = cat; pkPick = ''; renderCatPick(); openSheet('Pick2', true); }
+function closeCatPick(){ openSheet('Pick2', false); }
+function pkSel(){ return pkPick ? products.find(function(x){ return x.id === pkPick; }) : null; }
+function renderCatPick(){
+  if (!$('pkBody') || !pickCat) return;
+  var list = catProducts(pickCat);
+  $('pkTitle').textContent = catIcon(pickCat) + ' ' + pickCat + ' · ' + list.length + ' รายการ';
+  var subs = subTokensOf(list), used = {}, groups = [];
+  subs.forEach(function(s){
+    var g = list.filter(function(p){ return subMatch(p, s.t) && !used[p.id]; });
+    if (!g.length) return;
+    g.forEach(function(p){ used[p.id] = 1; });
+    groups.push({ name: s.t + ' (' + g.length + ')', items: g });
+  });
+  var rest = list.filter(function(p){ return !used[p.id]; });
+  if (rest.length) groups.push({ name: (groups.length ? 'อื่น ๆ ' : 'สินค้า') + ' (' + rest.length + ')', items: rest });
+  var html = groups.map(function(g){
+    return '<div class="pkgrp">' + esc(g.name) + '</div><div class="pkchips">' + g.items.map(function(p){
+      var cq = cartQtyOfProduct(p.id);
+      return '<button class="pkchip' + (String(pkPick) === String(p.id) ? ' on' : '') + '" data-id="' + esc(p.id) + '">' +
+        '<b>' + esc(p.name) + '</b><span class="pc2">' + money(p.price) + ' / ' + esc(p.unit || 'ชิ้น') +
+        (hasOptions(p) ? ' · ' + optionsOf(p).length + ' รหัส' : '') + '</span>' +
+        (cq > 0 ? '<span class="pcb">ในตะกร้า ' + fmtQty(cq) + '</span>' : '') + '</button>';
+    }).join('') + '</div>';
+  }).join('');
+  if (!list.length) html = '<div class="hint-note">ยังไม่มีสินค้าในหมวดนี้</div>';
+  var p = pkSel(), key = p ? optKey(p.id, '') : '', q = p ? n2(cart[key]) : 0;
+  var ep = p ? effectivePrice(p, cartQtyOfProduct(p.id)) : null;
+  var selHtml = p
+    ? '<div class="pksel"><span>' + esc(p.name) + '<br><span style="font-weight:700;color:var(--muted);font-size:11.5px">' +
+        esc(p.unit || 'ชิ้น') + ' · เหลือ ' + fmtQty(p.stock) + ' ' + esc(p.unit || 'ชิ้น') + '</span></span><span class="pkp">' + money(ep.price) + '</span></div>'
+    : '<div class="pksel" style="display:block;color:var(--muted);font-weight:700">👆 แตะสินค้าด้านบนเพื่อเลือก</div>';
+  var qtyHtml = p ? '<div class="pdsec"><div class="pdsec-h"><span>จำนวน</span><span class="sel">' +
+      (q > 0 ? 'ในตะกร้า ' + fmtQty(q) + ' ' + esc(p.unit || 'ชิ้น') + ' · ยอด ' + money(lineAmount(ep.price, q)) : '') + '</span></div>' +
+      '<div class="pdq" style="margin-top:9px"><button class="qbtn minus" data-act="minus">−</button>' +
+      '<input class="qin" inputmode="decimal" value="' + fmtQty(q) + '" aria-label="จำนวน">' +
+      '<button class="qbtn plus" data-act="plus">+</button></div>' +
+      (q > 0 && ep.wholesale ? '<div class="hint-note" style="margin-top:6px">✅ ใช้ราคาส่ง ' + money(ep.price) + ' (ครบขั้นต่ำแล้ว)</div>' : '') +
+      (q > 0 && isRounded(ep.price, q) ? '<div class="hint-note" style="margin-top:4px">💰 ปัดเศษขึ้นจาก ' + fmt(n2(ep.price) * q) + ' เป็นจำนวนเต็มบาท</div>' : '') +
+      '</div>' : '';
+  $('pkBody').innerHTML = html + selHtml + qtyHtml;
+  var btn = $('btnPkAdd');
+  if (!p) btn.textContent = '🛒 เพิ่มไปยังตะกร้า';
+  else if (hasOptions(p)) btn.textContent = '🎨 เลือกรหัส / สี ›';
+  else if (q > 0) btn.textContent = '✅ เสร็จแล้ว (ในตะกร้า ' + fmtQty(q) + ' ' + (p.unit || 'ชิ้น') + ')';
+  else btn.textContent = '🛒 เพิ่มไปยังตะกร้า · ' + money(ep.price);
+  btn.onclick = function(){
+    if (!p) { toast('⚠️ เลือกสินค้าก่อนครับ'); return; }
+    if (hasOptions(p)) { closeCatPick(); openProd(p.id); return; }
+    if (n2(cart[key]) > 0) { closeCatPick(); return; }
+    addToCart(p.id);
+  };
+  $('btnPkCards').textContent = '📋 ดูเป็นรายการการ์ด ›';
+  $('btnPkCards').onclick = function(){
+    var c = pickCat; closeCatPick();
+    sellCat = (c === '__all') ? '__all' : c; sellSub = ''; $('q').value = ''; renderSell(); window.scrollTo(0, 0);
+  };
+  Array.prototype.forEach.call($('pkBody').querySelectorAll('.pkchip'), function(b){
+    b.onclick = function(){ pkPick = b.getAttribute('data-id'); renderCatPick(); };
+  });
+  var mn = $('pkBody').querySelector('[data-act="minus"]'), pl = $('pkBody').querySelector('[data-act="plus"]'), qi = $('pkBody').querySelector('.qin');
+  if (mn) mn.onclick = function(){ setQty(key, n2(cart[key]) - 1); };
+  if (pl) pl.onclick = function(){ addToCart(p.id); };
+  if (qi) {
+    qi.onfocus = function(){ qi.select(); };
+    qi.onchange = function(){ setQty(key, parseQty(qi.value)); };
+    qi.onkeydown = function(ev){ if (ev.key === 'Enter') { ev.preventDefault(); qi.blur(); } };
+  }
+}
 function renderProdSheet(){
   if (!$('pdBody') || !prodTarget) return;
   var p = products.find(function(x){ return x.id === prodTarget; });
@@ -1136,7 +1236,7 @@ function addToCart(id, code){
     if (!confirm('“' + optLineName(p, code) + '” เหลือสต็อก ' + fmtQty(p.stock) + ' ' + (p.unit||'ชิ้น') + '\nขายเกินสต็อกหรือไม่?')) return;
   }
   cart[key] = cur + 1;
-  renderProducts(); renderWholesale(); renderCart(); renderProdSheet(); updateCartBar();
+  renderProducts(); renderWholesale(); renderCart(); renderProdSheet(); if (pickCat) renderCatPick(); updateCartBar();
   toast('➕ ' + optLineName(p, code) + ' ×' + fmtQty(cart[key]));
 }
 function wholesaleMinOf(p){ var m = n2(p.wholesaleMin); return m > 0 ? m : 12; }
@@ -1249,7 +1349,7 @@ function updateCartBar(){
 function setQty(key, q){
   q = n2(q);
   if (q <= 0) delete cart[key]; else cart[key] = q;
-  renderProducts(); renderWholesale(); renderCart(); renderProdSheet(); updateCartBar();
+  renderProducts(); renderWholesale(); renderCart(); renderProdSheet(); if (pickCat) renderCatPick(); updateCartBar();
 }
 function renderQr(t){
   // ปิดใช้งาน QR พร้อมเพย์แล้ว (ร้านเลือกบันทึกเป็น “โอน” เฉย ๆ ไม่ต้องมี QR)
@@ -1685,6 +1785,8 @@ $('wq').oninput = function(){ renderWholesale(); };
 // สรุปแบ่งเดือน
 $('btnAddOpt').onclick = function(){ var r = addOptRow('', ''); r.querySelector('.oCode').focus(); };
 $('xProd').onclick = closeProd;
+$('xPick2').onclick = closeCatPick;
+$('ovPick2').onclick = closeCatPick;
 $('ovProd').onclick = closeProd;
 $('mSel').onchange = function(){ mSel = $('mSel').value; renderMonthReport(); };
 $('mPrev').onclick = function(){ mSel = shiftMonth(mSel || currentMonthKey(), -1); renderMonthReport(); };

@@ -95,6 +95,21 @@ html.shopee .thbtn.on{border-color:#ee4d2d;color:#ee4d2d;background:#fdece7}
 .stabs{display:flex;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:12}
 .stabs button{flex:1;border:none;background:none;font-family:inherit;font-size:14px;font-weight:800;color:var(--muted);padding:13px 4px 11px;border-bottom:3px solid transparent;cursor:pointer}
 .stabs button.on{color:var(--primary);border-bottom-color:var(--primary)}
+/* การ์ดหมวดที่เป็น “ตัวเลือก” (รวมเป็นใบเดียว) */
+.optcat{display:flex;align-items:center;gap:12px;width:100%;background:var(--card);border:1px solid rgba(226,232,240,.9);border-left:4px solid var(--primary);border-radius:14px;padding:13px 14px;margin:2px 0 14px;font-family:inherit;text-align:left;color:var(--text);cursor:pointer;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.optcat:active{background:#f0fdfa}
+.optcat .oi{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#eef2ff,#f0fdfa);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.optcat .ot{flex:1;min-width:0}
+.optcat .ot b{display:block;font-size:15px;font-weight:800}
+.optcat .os{display:block;font-size:11.5px;color:var(--muted);font-weight:700;margin-top:3px}
+.optcat .og{font-size:13px;font-weight:800;color:var(--primary);flex-shrink:0}
+html.shopee .optcat{border-left-color:#ee4d2d}
+html.shopee .optcat .og{color:#ee4d2d}
+/* รายการสลับในหน้าตั้งค่า */
+.optcats{display:flex;flex-wrap:wrap;gap:8px}
+.optcatbtn{border:2px solid var(--line);background:var(--card);border-radius:99px;padding:8px 13px;font-family:inherit;font-size:13px;font-weight:800;color:var(--muted);cursor:pointer}
+.optcatbtn.on{border-color:var(--primary);color:var(--primary);background:#e6f4f2}
+html.shopee .optcatbtn.on{border-color:#ee4d2d;color:#ee4d2d;background:#fdece7}
 /* หัวข้อหมวดในรายการสินค้า */
 .cgrp{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 4px 8px}
 .cgrp .t{font-size:14.5px;font-weight:800}
@@ -568,6 +583,10 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
           <option value="l6080">สติกเกอร์ 60×80mm — ใบเสร็จย่อ + รายการ</option>
           <option value="l100150">สติกเกอร์ 100×150mm (4×6") — ใบเสร็จเต็ม</option>
         </select></div>
+      <div class="fld"><label>หมวดที่แสดงเป็น “ตัวเลือก” (การ์ดเดียว)</label>
+        <div class="optcats" id="optCatList"></div>
+        <div class="hint-note" style="margin-top:7px">หมวดที่เปิดไว้: หน้าแรกจะโชว์ <b>การ์ดเดียว</b> กดแล้วเด้งชีตตัวเลือก (เช่น <b>ยางยืด(พับ)</b> → เลือก #4 #6 #8 …) — ไม่โชว์สินค้าทีละตัวให้รก</div>
+      </div>
       <div class="fld"><label>ธีมสีแอพ</label>
         <div class="thbtns" id="thBtns">
           <button class="thbtn" data-th="green">🟢 เขียวร้าน (เดิม)</button>
@@ -964,7 +983,14 @@ function renderHead(){
 // ---------- ขาย ----------
 // ---------- แท็บ ปลีก: ชั้น 1 รวมหมวด → ชั้น 2 สินค้าในหมวด → ชั้น 3 รายละเอียด ----------
 var CAT_ICON = { 'ยางยืด':'🪢', 'เชือก':'🪢', 'ผ้า':'🪡', 'ไหมพรม':'🧶', 'ไหมถัก':'🌀', 'ด้ายเย็บ':'🧷', 'อุปกรณ์ทำกระเป๋า':'👜', 'ไหม':'🧵' };
-function catIcon(c){ return CAT_ICON[c] || '📦'; }
+function catIcon(c){
+  if (CAT_ICON[c]) return CAT_ICON[c];
+  var ks = Object.keys(CAT_ICON);
+  for (var i = 0; i < ks.length; i++) if (String(c || '').indexOf(ks[i]) === 0) return CAT_ICON[ks[i]];
+  return '📦';
+}
+function optionCats(){ return (settings.optionCats && settings.optionCats.length) ? settings.optionCats : []; }
+function isOptionCat(c){ return optionCats().indexOf(c) >= 0; }
 function catNameOf(p){ var c = String(p.category || '').trim(); return c || 'ไม่ระบุหมวด'; }
 function catList(){
   var counts = {};
@@ -1159,6 +1185,16 @@ function renderProducts(){
     html = catList().map(function(c){
       var items = list.filter(function(p){ return catNameOf(p) === c.name; });
       if (!items.length) return '';
+      if (isOptionCat(c.name)) {                       // หมวดที่รวมเป็น “ตัวเลือก”: โชว์การ์ดเดียว
+        var ps = items.map(function(p){ return n2(p.price); }).filter(function(v){ return v > 0; });
+        var lo = ps.length ? Math.min.apply(null, ps) : 0, hi = ps.length ? Math.max.apply(null, ps) : 0;
+        var rng = (lo && hi) ? (lo === hi ? money(lo) : money(lo) + ' – ' + money(hi)) : '';
+        return '<button class="optcat" data-cat="' + esc(c.name) + '">' +
+          '<span class="oi">' + catIcon(c.name) + '</span>' +
+          '<span class="ot"><b>' + esc(c.name) + '</b>' +
+            '<span class="os">' + items.length + ' แบบ' + (rng ? ' · ' + rng : '') + ' · แตะเพื่อเลือก</span></span>' +
+          '<span class="og">เลือก ›</span></button>';
+      }
       return '<div class="cgrp"><span class="t">' + catIcon(c.name) + ' ' + esc(c.name) + '</span>' +
         '<span class="n">' + items.length + ' รายการ</span>' +
         '<button class="go" data-cat="' + esc(c.name) + '">ดูทั้งหมวด ›</button></div>' +
@@ -1169,6 +1205,9 @@ function renderProducts(){
   }
   $('pgrid').innerHTML = html;
   Array.prototype.forEach.call($('pgrid').querySelectorAll('.cgrp .go'), function(b){
+    b.onclick = function(){ openCatPick(b.getAttribute('data-cat')); };
+  });
+  Array.prototype.forEach.call($('pgrid').querySelectorAll('.optcat'), function(b){
     b.onclick = function(){ openCatPick(b.getAttribute('data-cat')); };
   });
   Array.prototype.forEach.call($('pgrid').querySelectorAll('.pbtn'), function(card){
@@ -1576,7 +1615,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 19;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 20;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }
@@ -2336,6 +2375,26 @@ function updateMonthTable(){
 }
 
 // ---------- ตั้งค่า ----------
+function renderOptCatList(){
+  if (!$('optCatList')) return;
+  var cats = catList();
+  $('optCatList').innerHTML = cats.map(function(c){
+    return '<button class="optcatbtn' + (isOptionCat(c.name) ? ' on' : '') + '" data-cat="' + esc(c.name) + '">' +
+      (isOptionCat(c.name) ? '✅ ' : '') + catIcon(c.name) + ' ' + esc(c.name) + ' (' + c.n + ')</button>';
+  }).join('') || '<span style="font-size:13px;color:var(--muted)">ยังไม่มีหมวด</span>';
+  Array.prototype.forEach.call($('optCatList').querySelectorAll('.optcatbtn'), function(b){
+    b.onclick = function(){
+      var c = b.getAttribute('data-cat');
+      var arr = optionCats().slice();
+      var i = arr.indexOf(c);
+      if (i >= 0) arr.splice(i, 1); else arr.push(c);
+      settings.optionCats = arr;
+      S.saveSettings({ optionCats: arr }).catch(function(){});
+      renderAll();
+      toast(i >= 0 ? ('📄 ' + c + ' → โชว์สินค้าทีละตัว') : ('🗂️ ' + c + ' → รวมเป็นการ์ดเดียว (กดแล้วเด้งตัวเลือก)'));
+    };
+  });
+}
 function renderSettings(){
   var f = document.activeElement;
   function setIf(id, v){ if (f && f.id === id) return; $(id).value = v == null ? '' : v; }
@@ -2346,6 +2405,7 @@ function renderSettings(){
   if (!f || f.id !== 'sWarn') $('sWarn').value = settings.warnLow === '0' ? '0' : '1';
   renderPaperSeg();
   applyTheme(settings.theme);
+  renderOptCatList();
 }
 
 // ---------- sheets ----------

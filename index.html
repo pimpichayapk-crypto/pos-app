@@ -62,6 +62,22 @@ header .sub{opacity:.9;font-size:12px;margin-top:2px}
 .chip .cnt{display:inline-block;margin-left:6px;background:rgba(15,23,42,.10);border-radius:99px;padding:0 6px;font-size:11px;font-weight:800}
 .chip.active .cnt{background:rgba(255,255,255,.3)}
 
+/* หน้ารวมหมวดหมู่ (ชั้น 1 ของแท็บ ปลีก) */
+.cathead{font-size:12.5px;font-weight:700;color:var(--muted);padding:12px 4px 8px}
+.catgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cat{background:var(--card);border:1px solid rgba(226,232,240,.9);border-radius:14px;padding:14px 12px;text-align:center;cursor:pointer;font-family:inherit;color:var(--text);position:relative;box-shadow:0 1px 3px rgba(15,23,42,.05);width:100%}
+.cat:active{background:#f0fdfa}
+.cat .cic{font-size:30px;line-height:1}
+.cat .cnm{font-weight:800;font-size:13.5px;margin-top:8px;line-height:1.3}
+.cat .ccnt{font-size:11.5px;color:var(--muted);font-weight:700;margin-top:4px}
+.cat .cgo{position:absolute;right:10px;top:8px;color:#cbd5e1;font-size:15px;font-weight:800}
+.cat.all{grid-column:1 / -1;display:flex;align-items:center;gap:12px;text-align:left;background:linear-gradient(135deg,#f0fdfa,#fff);border-color:#99f6e4}
+.cat.all .cic{font-size:26px}
+.sellhead{display:flex;align-items:center;gap:11px;padding:4px 2px 10px}
+.sellhead .backbtn{width:38px;height:38px;border-radius:12px;border:1px solid var(--line);background:#fff;font-size:21px;font-weight:800;color:var(--primary);font-family:inherit;line-height:1;cursor:pointer;flex-shrink:0}
+.sellhead .sh-t{font-weight:800;font-size:16px}
+.sellhead .sh-c{font-size:11.5px;color:var(--muted);font-weight:700;margin-top:2px}
+#prodScreen .chips{padding:0 0 10px}
 /* product grid — แบบ Shopee 2 คอลัมน์ (โทนสีเขียวเดิม) */
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;align-items:start}
 .pbtn{background:var(--card);border:1px solid rgba(226,232,240,.85);border-radius:14px;overflow:hidden;position:relative;text-align:left;cursor:pointer;font-family:inherit;box-shadow:0 1px 3px rgba(15,23,42,.06);color:var(--text);width:100%;padding:0;display:block}
@@ -340,9 +356,22 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
       <div class="searchwrap"><span class="ic">🔍</span><input id="q" type="search" placeholder="ค้นหาสินค้า / รหัส"></div>
       <button class="chip" id="btnClearCart" style="padding:11px 14px">🧹 ล้างตะกร้า</button>
     </div>
-    <div class="chips" id="cats"></div>
-    <div class="grid" id="pgrid"></div>
-    <div class="empty" id="pempty" style="display:none">ไม่พบสินค้า<br><button class="chip" id="btnAddFromSell" style="padding:9px 14px;margin-top:10px">➕ เพิ่มสินค้าใหม่</button></div>
+    <!-- ชั้น 1: รวมหมวดหมู่ -->
+    <div id="catScreen">
+      <div class="cathead" id="catCount"></div>
+      <div class="catgrid" id="catGrid"></div>
+      <div class="empty" id="catEmpty" style="display:none">ยังไม่มีสินค้า<br><button class="chip" id="btnAddFromCat" style="padding:9px 14px;margin-top:10px">➕ เพิ่มสินค้าใหม่</button></div>
+    </div>
+    <!-- ชั้น 2: สินค้าในหมวดที่เลือก -->
+    <div id="prodScreen" style="display:none">
+      <div class="sellhead">
+        <button class="backbtn" id="btnBackCat" aria-label="ย้อนกลับ">‹</button>
+        <div><div class="sh-t" id="shTitle">สินค้า</div><div class="sh-c" id="shCount"></div></div>
+      </div>
+      <div class="chips" id="cats"></div>
+      <div class="grid" id="pgrid"></div>
+      <div class="empty" id="pempty" style="display:none">ไม่พบสินค้า<br><button class="chip" id="btnAddFromSell" style="padding:9px 14px;margin-top:10px">➕ เพิ่มสินค้าใหม่</button></div>
+    </div>
   </section>
 
   <!-- ================= สินค้า / สต็อก ================= -->
@@ -600,6 +629,7 @@ var cart = {};             // id -> qty
 var payMethod = 'cash';
 var currentOrder = null;   // บิลที่เปิดดูอยู่
 var filterCat = 'all', hRange = 'today', rRange = 'today';
+var sellCat = null, sellSub = '';   // ชั้นของแท็บ ปลีก: null = หน้ารวมหมวด
 var useLocal = !isLive;    // โหมดตัวอย่าง (เก็บใน localStorage)
 var LS = { p: 'pos_products', o: 'pos_orders', s: 'pos_settings', m: 'pos_months' };
 
@@ -796,7 +826,7 @@ function setLive(){
     'โปรเจกต์: <b>' + esc(isLive ? cfg.projectId : '—') + '</b><br>' +
     'สินค้า: <b>' + products.length + '</b> รายการ · บิล: <b>' + orders.length + '</b> ใบ';
 }
-function renderAll(){ renderHead(); renderCats(); renderProducts(); renderCart(); renderStock(); renderWholesale(); renderProdSheet(); renderHistory(); renderReport(); renderMonthReport(); renderSettings(); setLive(); }
+function renderAll(){ renderHead(); renderSell(); renderProducts(); renderCart(); renderStock(); renderWholesale(); renderProdSheet(); renderHistory(); renderReport(); renderMonthReport(); renderSettings(); setLive(); }
 function renderHead(){
   $('shopName').textContent = settings.shopName || 'ร้านของฉัน';
   var t = todayStats();
@@ -805,23 +835,98 @@ function renderHead(){
 }
 
 // ---------- ขาย ----------
-function renderCats(){
-  var cats = products.map(function(p){ return p.category; }).filter(Boolean)
-    .filter(function(c,i,a){ return a.indexOf(c) === i; }).sort();
-  var html = '<button class="chip' + (filterCat === 'all' ? ' active' : '') + '" data-cat="all">ทั้งหมด</button>';
-  cats.forEach(function(c){
-    html += '<button class="chip' + (filterCat === c ? ' active' : '') + '" data-cat="' + esc(c) + '">' + esc(c) + '</button>';
+// ---------- แท็บ ปลีก: ชั้น 1 รวมหมวด → ชั้น 2 สินค้าในหมวด → ชั้น 3 รายละเอียด ----------
+var CAT_ICON = { 'ยางยืด':'🪢', 'เชือก':'🪢', 'ผ้า':'🪡', 'ไหมพรม':'🧶', 'ไหมถัก':'🌀', 'ด้ายเย็บ':'🧷', 'อุปกรณ์ทำกระเป๋า':'👜', 'ไหม':'🧵' };
+function catIcon(c){ return CAT_ICON[c] || '📦'; }
+function catNameOf(p){ var c = String(p.category || '').trim(); return c || 'ไม่ระบุหมวด'; }
+function catList(){
+  var counts = {};
+  products.forEach(function(p){ var c = catNameOf(p); counts[c] = (counts[c] || 0) + 1; });
+  return Object.keys(counts).sort(function(a,b){ return counts[b] - counts[a] || a.localeCompare(b, 'th'); })
+    .map(function(c){ return { name: c, n: counts[c] }; });
+}
+function subTokensOf(list){
+  var map = {};
+  list.forEach(function(p){
+    var nm = String(p.name || '');
+    (nm.match(/\(([^()]+)\)/g) || []).forEach(function(x){
+      var t = x.replace(/[()]/g, '').trim();
+      if (!t) return;
+      map[t] = (map[t] || 0) + 1;
+    });
+    if (/#\s*\d/.test(nm)) map['#เบอร์'] = (map['#เบอร์'] || 0) + 1;
+    // คำที่ต่อท้ายชื่อหมวด เช่น “ยางยืด” + “กลม(เล็ก)” → ตัวกรอง “กลม”
+    var rest = (nm.indexOf(catNameOf(p)) === 0) ? nm.slice(catNameOf(p).length) : '';
+    var m2 = rest.match(/^([^\s(#(]+)/);
+    if (m2) { var t2 = m2[1].trim(); if (t2.length >= 2 && t2.length <= 12) map[t2] = (map[t2] || 0) + 1; }
   });
-  $('cats').innerHTML = html;
+  return Object.keys(map).filter(function(t){ return map[t] >= 2; })
+    .map(function(t){ return { t: t, n: map[t] }; })
+    .sort(function(a,b){ return b.n - a.n || a.t.localeCompare(b.t, 'th'); });
+}
+function subMatch(p, t){
+  if (!t) return true;
+  var nm = String(p.name || '');
+  if (t === '#เบอร์') return /#\s*\d/.test(nm);
+  if (nm.indexOf('(' + t + ')') >= 0) return true;
+  var cat = catNameOf(p);
+  var rest = (nm.indexOf(cat) === 0) ? nm.slice(cat.length) : '';
+  var m = rest.match(/^([^\s(#(]+)/);
+  return !!(m && m[1].trim() === t);
+}
+function sellTitleText(){
+  var q = ($('q').value || '').trim();
+  if (q) return '🔍 ผลการค้นหา “' + q + '”';
+  if (sellCat === '__all') return '📋 สินค้าทั้งหมด';
+  return sellCat ? (catIcon(sellCat) + ' ' + sellCat) : 'สินค้า';
+}
+function renderSell(){
+  var q = ($('q').value || '').trim();
+  var showCats = !q && !sellCat;
+  if ($('catScreen')) $('catScreen').style.display = showCats ? 'block' : 'none';
+  if ($('prodScreen')) $('prodScreen').style.display = showCats ? 'none' : 'block';
+  if (showCats) { renderCatGrid(); renderProducts(); return; }
+  var inCat = products.filter(function(p){ return (sellCat && sellCat !== '__all') ? catNameOf(p) === sellCat : true; });
+  var subs = (!q && sellCat && sellCat !== '__all') ? subTokensOf(inCat) : [];
+  var subHtml = '';
+  if (subs.length) {
+    subHtml = '<button class="chip' + (sellSub === '' ? ' active' : '') + '" data-sub="">ทั้งหมด ' + inCat.length + '</button>';
+    subs.forEach(function(s){
+      subHtml += '<button class="chip' + (sellSub === s.t ? ' active' : '') + '" data-sub="' + esc(s.t) + '">' + esc(s.t) + ' ' + s.n + '</button>';
+    });
+  }
+  $('cats').innerHTML = subHtml;
   Array.prototype.forEach.call($('cats').querySelectorAll('.chip'), function(b){
-    b.onclick = function(){ filterCat = b.getAttribute('data-cat'); renderCats(); renderProducts(); };
+    b.onclick = function(){ sellSub = b.getAttribute('data-sub') || ''; renderSell(); };
+  });
+  $('shTitle').textContent = sellTitleText();
+  var n = filteredProducts().length;
+  $('shCount').textContent = n + ' รายการ' + (sellSub ? ' · กรอง: ' + sellSub : '');
+  renderProducts();
+}
+function renderCatGrid(){
+  var cats = catList();
+  var total = products.length;
+  $('catEmpty').style.display = total ? 'none' : 'block';
+  var html = total ? ('<button class="cat all" data-cat="__all"><span class="cic">📋</span><span><span class="cnm">ดูสินค้าทั้งหมด</span><span class="ccnt">' + total + ' รายการ · ทุกหมวด</span></span><span class="cgo">›</span></button>') : '';
+  cats.forEach(function(c){
+    html += '<button class="cat" data-cat="' + esc(c.name) + '"><span class="cgo">›</span><span class="cic">' + catIcon(c.name) + '</span>' +
+      '<span class="cnm">' + esc(c.name) + '</span><span class="ccnt">' + c.n + ' รายการ</span></button>';
+  });
+  $('catGrid').innerHTML = html;
+  $('catCount').textContent = 'แตะหมวดเพื่อดูสินค้าในหมวดนั้น · ' + total + ' รายการ · ' + cats.length + ' หมวด';
+  Array.prototype.forEach.call($('catGrid').querySelectorAll('.cat'), function(b){
+    b.onclick = function(){ sellCat = b.getAttribute('data-cat'); sellSub = ''; renderSell(); window.scrollTo(0, 0); };
   });
 }
+function backToCats(){ sellCat = null; sellSub = ''; $('q').value = ''; renderSell(); window.scrollTo(0, 0); }
+function renderCats(){ renderSell(); }
 function isWholesaleQuery(q){ return q === 'ยกแพ็ค' || q === 'ยกแพค' || q === 'แพ็ค' || q === 'แพค' || q === 'ส่ง' || q === 'ราคาส่ง' || q === 'ราคาโหล' || q === 'โหล' || q === 'wholesale' || q === 'ws'; }
 function filteredProducts(){
   var q = ($('q').value || '').trim().toLowerCase();
   return products.filter(function(p){
-    if (filterCat !== 'all' && p.category !== filterCat) return false;
+    if (sellCat && sellCat !== '__all' && catNameOf(p) !== sellCat) return false;
+    if (!subMatch(p, sellSub)) return false;
     if (!q) return true;
     if (isWholesaleQuery(q) && n2(p.wholesalePrice) > 0) return true;
     return String(p.name || '').toLowerCase().indexOf(q) >= 0 || String(p.category || '').toLowerCase().indexOf(q) >= 0 || optMatch(p, q);
@@ -1933,7 +2038,9 @@ $('btnCloseCart').onclick = function(){ openSheet('Cart', false); };
 $('xOrder').onclick = function(){ openSheet('Order', false); };
 $('ovOrder').onclick = function(){ openSheet('Order', false); };
 $('btnClearCart').onclick = function(){ if (!Object.keys(cart).length) return; if (!confirm('ล้างตะกร้าทั้งหมด?')) return; cart = {}; $('discount').value=''; $('received').value=''; renderProducts(); renderCart(); };
-$('q').oninput = function(){ renderProducts(); };
+$('q').oninput = function(){ sellSub = ''; renderSell(); };
+$('btnBackCat').onclick = backToCats;
+$('btnAddFromCat').onclick = function(){ openProductForm(null); };
 $('hq').oninput = function(){ renderHistory(); };
 $('discount').oninput = function(){ renderCart(); };
 $('received').oninput = function(){ renderCart(); };
@@ -2109,7 +2216,12 @@ Array.prototype.forEach.call(document.querySelectorAll('.tabbar button'), functi
     Array.prototype.forEach.call(document.querySelectorAll('.tabbar button'), function(x){ x.classList.remove('on'); });
     Array.prototype.forEach.call(document.querySelectorAll('.view'), function(x){ x.classList.remove('on'); });
     b.classList.add('on');
+    var wasView = currentView;
     currentView = b.getAttribute('data-view');
+    if (currentView === 'Sell') {
+      if (wasView === 'Sell') backToCats();   // แตะแท็บ ปลีก ซ้ำ = กลับไปหน้ารวมหมวด
+      else renderSell();
+    }
     $('headSub').textContent = viewName(currentView);
     $('view' + currentView).classList.add('on');
     renderWholesale();

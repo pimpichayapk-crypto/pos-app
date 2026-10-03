@@ -999,6 +999,26 @@ function catIcon(c){
 }
 function optionCats(){ return []; }        // เลิกใช้แล้ว: ทุกหมวดเป็นช่องในหน้าขายอยู่แล้ว
 function isOptionCat(c){ return false; }
+// ---------- เรียงเลขตามธรรมชาติ (natural sort): #4 < #6 < #10 และ ¾" < 1" < 1¼" < 2" ----------
+var FRACV = { '¼': 0.25, '½': 0.5, '¾': 0.75, '⅓': 0.3333, '⅔': 0.6667, '⅛': 0.125, '⅜': 0.375, '⅝': 0.625, '⅞': 0.875 };
+function natKey(s){
+  return String(s == null ? '' : s).replace(/[¼½¾⅓⅔⅛⅜⅝⅞]/g, function(c){ return ' ' + FRACV[c] + ' '; })
+    .replace(/\s+/g, ' ').trim();
+}
+function natTokens(s){ return natKey(s).match(/\d+(?:\.\d+)?|\D+/g) || []; }
+function natCmp(a, b){
+  var A = natTokens(a), B = natTokens(b);
+  for (var i = 0; i < Math.max(A.length, B.length); i++) {
+    var x = A[i], y = B[i];
+    if (x === undefined) return -1;
+    if (y === undefined) return 1;
+    var xNum = /^\d/.test(x), yNum = /^\d/.test(y);
+    if (xNum && yNum) { var d = parseFloat(x) - parseFloat(y); if (d) return d; }
+    else { var c = x.localeCompare(y, 'th'); if (c) return c; }
+  }
+  return 0;
+}
+function byNameNat(a, b){ return natCmp(a && a.name, b && b.name); }
 function catNameOf(p){ var c = String(p.category || '').trim(); return c || 'ไม่ระบุหมวด'; }
 function catList(){
   var counts = {};
@@ -1103,7 +1123,7 @@ function filteredProducts(){
     if (!q) return true;
     if (isWholesaleQuery(q) && n2(p.wholesalePrice) > 0) return true;
     return String(p.name || '').toLowerCase().indexOf(q) >= 0 || String(p.category || '').toLowerCase().indexOf(q) >= 0 || optMatch(p, q);
-  });
+  }).sort(byNameNat);                                               // เรียงเลขจากน้อยไปมาก (#4 → #6 → #10, ¾" → 1" → 2")
 }
 function stockClass(p){
   var s = n2(p.stock), low = p.lowStock == null ? 5 : n2(p.lowStock);
@@ -1268,7 +1288,7 @@ function closeCatPick(){ openSheet('Pick2', false); }
 function pkSel(){ return pkPick ? products.find(function(x){ return x.id === pkPick; }) : null; }
 function renderCatPick(){
   if (!$('pkBody') || !pickCat) return;
-  var all = sheetProducts(pickCat);
+  var all = sheetProducts(pickCat).slice().sort(byNameNat);
   var list = pickGroup ? all.filter(function(p){ return subMatch(p, pickGroup); }) : all;
   $('pkTitle').textContent = catIcon(pickCat) + ' ' + pickCat + (pickGroup ? ' · ' + pickGroup : '') + ' · ' + list.length + ' รายการ';
   var subs = pickGroup ? [] : subTokensOf(list), used = {}, groups = [];
@@ -1612,7 +1632,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 26;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 27;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }
@@ -1654,7 +1674,7 @@ function sortedStock(){
     if (sSort === 'stock') return n2(a.stock) - n2(b.stock);
     if (sSort === 'price') return n2(b.price) - n2(a.price);
     if (sSort === 'value') return (n2(b.stock) * n2(b.price)) - (n2(a.stock) * n2(a.price));
-    return String(a.name || '').localeCompare(String(b.name || ''), 'th');
+    return byNameNat(a, b);
   });
   return list;
 }
@@ -1698,7 +1718,7 @@ function renderStockSheet(){
 // ---------- สินค้าราคาส่ง ----------
 function wholesaleProducts(){
   return products.filter(function(p){ return n2(p.wholesalePrice) > 0; })
-    .sort(function(a,b){ return String(a.name||'').localeCompare(String(b.name||''), 'th'); });
+    .sort(byNameNat);
 }
 function wsDiscount(p){
   var r = n2(p.price), w = n2(p.wholesalePrice);

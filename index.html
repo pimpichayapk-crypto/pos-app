@@ -1076,13 +1076,14 @@ function renderCatGrid(){
   var total = products.length;
   $('catEmpty').style.display = total ? 'none' : 'block';
   $('catGrid').innerHTML = cats.map(function(c){
-    var items = catProducts(c.name).map(function(p){ return n2(p.price); }).filter(function(v){ return v > 0; });
+    var sp = sheetProducts(c.name);
+    var items = sp.map(function(p){ return n2(p.price); }).filter(function(v){ return v > 0; });
     var lo = items.length ? Math.min.apply(null, items) : 0, hi = items.length ? Math.max.apply(null, items) : 0;
     var rng = (lo && hi) ? (lo === hi ? money(lo) : money(lo) + ' – ' + money(hi)) : '';
     return '<button class="slot" data-cat="' + esc(c.name) + '">' +
       '<span class="sic">' + catIcon(c.name) + '</span>' +
       '<span class="snm">' + esc(c.name) + '</span>' +
-      '<span class="scnt">' + c.n + ' รายการ</span>' +
+      '<span class="scnt">' + sp.length + ' รายการ</span>' +
       (rng ? '<span class="spr">' + rng + '</span>' : '') +
       '<span class="sgo">เลือก ›</span></button>';
   }).join('');
@@ -1251,13 +1252,15 @@ function closeProd(){ openSheet('Prod', false); }
 // ---------- ชีตเลือกสินค้าในหมวด (กดหมวด → เด้งตัวเลือกขึ้นมา) ----------
 var pickCat = null, pkPick = '', pickGroup = '';
 function catProducts(cat){ return products.filter(function(p){ return catNameOf(p) === cat; }); }
+// สินค้าที่จะโชว์ใน “ชีตตัวเลือก” ของหมวด (hideSheet = เอาออกจากชีต แต่ยังอยู่ในระบบ)
+function sheetProducts(cat){ return catProducts(cat).filter(function(p){ return !p.hideSheet; }); }
 function groupTokenOf(p){
-  var list = catProducts(catNameOf(p)), subs = subTokensOf(list);
+  var list = sheetProducts(catNameOf(p)), subs = subTokensOf(list);
   for (var i = 0; i < subs.length; i++) if (subMatch(p, subs[i].t)) return subs[i].t;
   return '';
 }
 function siblingsOf(p){
-  var g = groupTokenOf(p), list = catProducts(catNameOf(p));
+  var g = groupTokenOf(p), list = sheetProducts(catNameOf(p));
   return g ? list.filter(function(x){ return subMatch(x, g); }) : list;
 }
 function openCatPick(cat, group, pickId){ pickCat = cat; pickGroup = group || ''; pkPick = pickId || ''; renderCatPick(); openSheet('Pick2', true); }
@@ -1265,7 +1268,7 @@ function closeCatPick(){ openSheet('Pick2', false); }
 function pkSel(){ return pkPick ? products.find(function(x){ return x.id === pkPick; }) : null; }
 function renderCatPick(){
   if (!$('pkBody') || !pickCat) return;
-  var all = catProducts(pickCat);
+  var all = sheetProducts(pickCat);
   var list = pickGroup ? all.filter(function(p){ return subMatch(p, pickGroup); }) : all;
   $('pkTitle').textContent = catIcon(pickCat) + ' ' + pickCat + (pickGroup ? ' · ' + pickGroup : '') + ' · ' + list.length + ' รายการ';
   var subs = pickGroup ? [] : subTokensOf(list), used = {}, groups = [];
@@ -1609,7 +1612,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 24;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 25;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }

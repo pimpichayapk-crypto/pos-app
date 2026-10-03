@@ -1117,7 +1117,7 @@ function isWholesaleQuery(q){ return q === 'ยกแพ็ค' || q === 'ยก
 function filteredProducts(){
   var q = ($('q').value || '').trim().toLowerCase();
   return products.filter(function(p){
-    if (p.hideSheet) return false;                                  // ซ่อนจากหน้าสินค้าทั้งหมด (ยังอยู่ในระบบ/หน้าสินค้า)
+    if (p.hideList) return false;                                   // ซ่อนจากหน้าสินค้าทั้งหมด (ยังอยู่ในระบบ/หน้าสินค้า)
     if (sellCat && sellCat !== '__all' && catNameOf(p) !== sellCat) return false;
     if (!subMatch(p, sellSub)) return false;
     if (!q) return true;
@@ -1632,7 +1632,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 27;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 28;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }

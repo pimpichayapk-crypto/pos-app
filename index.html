@@ -1002,7 +1002,10 @@ function isOptionCat(c){ return false; }
 // ---------- เรียงเลขตามธรรมชาติ (natural sort): #4 < #6 < #10 และ ¾" < 1" < 1¼" < 2" ----------
 var FRACV = { '¼': 0.25, '½': 0.5, '¾': 0.75, '⅓': 0.3333, '⅔': 0.6667, '⅛': 0.125, '⅜': 0.375, '⅝': 0.625, '⅞': 0.875 };
 function natKey(s){
-  return String(s == null ? '' : s).replace(/[¼½¾⅓⅔⅛⅜⅝⅞]/g, function(c){ return ' ' + FRACV[c] + ' '; })
+  return String(s == null ? '' : s)
+    // "1¼" → "1.25" (รวมเศษเข้ากับเลขหน้าด้วย ไม่ให้กลายเป็น 1 กับ 0.25)
+    .replace(/(\d)\s*([¼½¾⅓⅔⅛⅜⅝⅞])/g, function(m, d, f){ return (parseInt(d, 10) + FRACV[f]).toFixed(2); })
+    .replace(/[¼½¾⅓⅔⅛⅜⅝⅞]/g, function(c){ return ' ' + FRACV[c] + ' '; })
     .replace(/\s+/g, ' ').trim();
 }
 function natTokens(s){ return natKey(s).match(/\d+(?:\.\d+)?|\D+/g) || []; }
@@ -1018,7 +1021,14 @@ function natCmp(a, b){
   }
   return 0;
 }
-function byNameNat(a, b){ return natCmp(a && a.name, b && b.name); }
+// เทียบ "ชื่อหลัก" ก่อน (ตัดวงเล็บตัวเลือกออก) เพื่อให้ ยางยืดกลม(เล็ก) ไปอยู่ล่างสุดหลัง ยางยืด(ขาว)/(ดำ)
+function natBase(s){ return natKey(s).replace(/\([^)]*\)/g, ' ').replace(/\s+/g, '').trim(); }
+function byNameNat(a, b){
+  var an = a && a.name, bn = b && b.name;
+  var c = natCmp(natBase(an), natBase(bn));
+  if (c) return c;
+  return natCmp(an, bn);
+}
 function catNameOf(p){ var c = String(p.category || '').trim(); return c || 'ไม่ระบุหมวด'; }
 function catList(){
   var counts = {};
@@ -1632,7 +1642,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 28;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 29;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }

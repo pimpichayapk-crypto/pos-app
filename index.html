@@ -485,8 +485,8 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
     </div>
     <!-- แท็บในร้าน (แบบ Shopee) -->
     <div class="stabs" id="sellTabs">
-      <button data-tab="cat" class="on">🗂️ หมวดหมู่</button>
-      <button data-tab="all">📋 สินค้าทั้งหมด</button>
+      <button data-tab="all" class="on">📋 สินค้าทั้งหมด</button>
+      <button data-tab="cat">🗂️ หมวดหมู่</button>
     </div>
     <!-- ชั้น 1: รวมหมวดหมู่ -->
     <div id="catScreen">
@@ -778,7 +778,7 @@ var payMethod = 'cash';
 var currentOrder = null;   // บิลที่เปิดดูอยู่
 var filterCat = 'all', hRange = 'today', rRange = 'today';
 var sellCat = null, sellSub = '';   // ชั้นของแท็บ ปลีก
-var sellTab = 'cat';                // 'cat' = ช่องหมวดหมู่ (หน้าแรก) · 'all' = สินค้าทั้งหมด (การ์ด)
+var sellTab = 'all';                // 'all' = สินค้าทั้งหมด (การ์ด · แท็บแรก) · 'cat' = ช่องหมวดหมู่
 function setSellTab(t){
   sellTab = t;
   if ($('sellTabs')) Array.prototype.forEach.call($('sellTabs').querySelectorAll('button'), function(x){ x.classList.toggle('on', x.getAttribute('data-tab') === t); });
@@ -1609,7 +1609,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 23;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 24;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }

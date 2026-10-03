@@ -1076,14 +1076,13 @@ function renderCatGrid(){
   var total = products.length;
   $('catEmpty').style.display = total ? 'none' : 'block';
   $('catGrid').innerHTML = cats.map(function(c){
-    var sp = sheetProducts(c.name);
-    var items = sp.map(function(p){ return n2(p.price); }).filter(function(v){ return v > 0; });
+    var items = catProducts(c.name).map(function(p){ return n2(p.price); }).filter(function(v){ return v > 0; });
     var lo = items.length ? Math.min.apply(null, items) : 0, hi = items.length ? Math.max.apply(null, items) : 0;
     var rng = (lo && hi) ? (lo === hi ? money(lo) : money(lo) + ' – ' + money(hi)) : '';
     return '<button class="slot" data-cat="' + esc(c.name) + '">' +
       '<span class="sic">' + catIcon(c.name) + '</span>' +
       '<span class="snm">' + esc(c.name) + '</span>' +
-      '<span class="scnt">' + sp.length + ' รายการ</span>' +
+      '<span class="scnt">' + c.n + ' รายการ</span>' +
       (rng ? '<span class="spr">' + rng + '</span>' : '') +
       '<span class="sgo">เลือก ›</span></button>';
   }).join('');
@@ -1098,6 +1097,7 @@ function isWholesaleQuery(q){ return q === 'ยกแพ็ค' || q === 'ยก
 function filteredProducts(){
   var q = ($('q').value || '').trim().toLowerCase();
   return products.filter(function(p){
+    if (p.hideSheet) return false;                                  // ซ่อนจากหน้าสินค้าทั้งหมด (ยังอยู่ในระบบ/หน้าสินค้า)
     if (sellCat && sellCat !== '__all' && catNameOf(p) !== sellCat) return false;
     if (!subMatch(p, sellSub)) return false;
     if (!q) return true;
@@ -1612,7 +1612,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 25;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 26;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }

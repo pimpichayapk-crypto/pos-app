@@ -80,7 +80,9 @@ html.shopee .btnPdAdd{background:#ee4d2d}
 .thbtn{flex:1;border:2px solid var(--line);background:var(--card);border-radius:12px;padding:11px 8px;font-family:inherit;font-size:13px;font-weight:800;color:var(--muted);cursor:pointer}
 .thbtn.on{border-color:var(--primary);color:var(--primary);background:#e6f4f2}
 html.shopee .thbtn.on{border-color:#ee4d2d;color:#ee4d2d;background:#fdece7}
-#viewSell .shophead{margin:0 -12px 0;padding:15px 14px 17px;border-radius:0 0 20px 20px}
+#viewSell .shophead{margin:0 -12px 0;padding:14px 14px 16px;border-radius:0 0 20px 20px}
+#viewSell .shophead .sn{display:none}
+#viewSell .shophead .ss{font-size:13px;font-weight:800;opacity:.95}
 #viewSell .stabs{margin:0 -12px;padding:0 12px}
 .shophead{background:linear-gradient(160deg,var(--primary2),var(--primary));padding:14px 14px 16px;color:#fff;border-radius:0 0 18px 18px;margin-bottom:2px}
 .shoprow{display:flex;align-items:center;gap:11px}
@@ -1185,16 +1187,7 @@ function renderProducts(){
     html = catList().map(function(c){
       var items = list.filter(function(p){ return catNameOf(p) === c.name; });
       if (!items.length) return '';
-      if (isOptionCat(c.name)) {                       // หมวดที่รวมเป็น “ตัวเลือก”: โชว์การ์ดเดียว
-        var ps = items.map(function(p){ return n2(p.price); }).filter(function(v){ return v > 0; });
-        var lo = ps.length ? Math.min.apply(null, ps) : 0, hi = ps.length ? Math.max.apply(null, ps) : 0;
-        var rng = (lo && hi) ? (lo === hi ? money(lo) : money(lo) + ' – ' + money(hi)) : '';
-        return '<button class="optcat" data-cat="' + esc(c.name) + '">' +
-          '<span class="oi">' + catIcon(c.name) + '</span>' +
-          '<span class="ot"><b>' + esc(c.name) + '</b>' +
-            '<span class="os">' + items.length + ' แบบ' + (rng ? ' · ' + rng : '') + ' · แตะเพื่อเลือก</span></span>' +
-          '<span class="og">เลือก ›</span></button>';
-      }
+      if (isOptionCat(c.name)) return '';              // หมวดแบบ “ตัวเลือก”: ไม่โชว์บนหน้าแรก (เข้าได้จากแท็บ หมวดหมู่ → ชีตตัวเลือก)
       return '<div class="cgrp"><span class="t">' + catIcon(c.name) + ' ' + esc(c.name) + '</span>' +
         '<span class="n">' + items.length + ' รายการ</span>' +
         '<button class="go" data-cat="' + esc(c.name) + '">ดูทั้งหมวด ›</button></div>' +
@@ -1615,7 +1608,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 20;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 22;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }

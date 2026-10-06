@@ -98,7 +98,8 @@ html.shopee .thbtn.on{border-color:#ee4d2d;color:#ee4d2d;background:#fdece7}
 .stabs button{flex:1;border:none;background:none;font-family:inherit;font-size:14px;font-weight:800;color:var(--muted);padding:13px 4px 11px;border-bottom:3px solid transparent;cursor:pointer}
 .stabs button.on{color:var(--primary);border-bottom-color:var(--primary)}
 /* ช่องหมวดหมู่ในหน้าขาย (1 ช่อง = 1 หมวด) */
-#catGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#catGrid,.catgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#pgrid .catgrid{margin-bottom:11px}
 .slot{background:var(--card);border:1px solid rgba(226,232,240,.9);border-radius:14px;padding:14px 12px 12px;text-align:center;cursor:pointer;font-family:inherit;color:var(--text);box-shadow:0 1px 3px rgba(15,23,42,.05);width:100%;display:flex;flex-direction:column;align-items:center;gap:2px}
 .slot:active{background:#f0fdfa}
 .slot .sic{font-size:32px;line-height:1}
@@ -1229,10 +1230,12 @@ function renderProducts(){
     var items = list.filter(function(p){ return catNameOf(p) === cn; });
     var prices = items.map(function(p){ return n2(p.price); }).filter(function(v){ return v > 0; });
     var range = prices.length ? money(Math.min.apply(null, prices)) + ' – ' + money(Math.max.apply(null, prices)) : '';
-    return '<button class="optcat" data-cat="' + esc(cn) + '">' +
-      '<span class="oi">' + catIcon(cn) + '</span>' +
-      '<span class="ot"><b>' + esc(cn) + '</b><span class="os">' + items.length + ' รายการ' + (range ? ' · ' + range : '') + '</span></span>' +
-      '<span class="og">เลือก ›</span></button>';
+    return '<button class="slot optcat" data-cat="' + esc(cn) + '">' +
+      '<span class="sic">' + catIcon(cn) + '</span>' +
+      '<span class="snm">' + esc(cn) + '</span>' +
+      '<span class="scnt">' + items.length + ' รายการ</span>' +
+      (range ? '<span class="spr">' + range + '</span>' : '') +
+      '<span class="sgo">เลือก ›</span></button>';
   }).join('');
   var cardList = slotCats.length ? list.filter(function(p){ return slotCats.indexOf(catNameOf(p)) < 0; }) : list;
   var html;
@@ -1247,7 +1250,7 @@ function renderProducts(){
         '<div class="grid">' + items.map(cardOf).join('') + '</div>';
     }).join('');
   } else {
-    html = (slotHtml ? '<div class="optslots">' + slotHtml + '</div>' : '') + '<div class="grid">' + cardList.map(cardOf).join('') + '</div>';
+    html = (slotHtml ? '<div class="catgrid">' + slotHtml + '</div>' : '') + '<div class="grid">' + cardList.map(cardOf).join('') + '</div>';
   }
   $('pgrid').innerHTML = html;
   Array.prototype.forEach.call($('pgrid').querySelectorAll('.cgrp .go'), function(b){
@@ -1663,7 +1666,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 31;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 32;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }

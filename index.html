@@ -1046,6 +1046,12 @@ function isOptionCat(c){ return optionCats().indexOf(c) >= 0; }
 // กลุ่มที่ตั้งให้โชว์เป็น “ช่องใหญ่” ในหน้าสินค้าทั้งหมด เช่น {cat:'เชือก', token:'ฝ้าย', label:'เชือกฝ้าย'}
 function optGroups(){ return (settings && settings.optGroups) || []; }
 function groupItems(list, g){ return list.filter(function(p){ return catNameOf(p) === g.cat && subMatch(p, g.token); }); }
+// ลำดับที่กำหนดเองในชีต: settings.sheetOrder = { 'ชื่อหมวด': ['คำขึ้นต้นชื่อ 1','คำขึ้นต้นชื่อ 2', ...] }
+function sheetOrderOf(cat){ return ((settings && settings.sheetOrder) || {})[cat] || []; }
+function sheetOrderIdx(name, ord){
+  for (var i = 0; i < ord.length; i++) if (String(name || '').indexOf(ord[i]) === 0) return i;
+  return 9999;
+}
 // ---------- เรียงเลขตามธรรมชาติ (natural sort): #4 < #6 < #10 และ ¾" < 1" < 1¼" < 2" ----------
 var FRACV = { '¼': 0.25, '½': 0.5, '¾': 0.75, '⅓': 0.3333, '⅔': 0.6667, '⅛': 0.125, '⅜': 0.375, '⅝': 0.625, '⅞': 0.875 };
 function natKey(s){
@@ -1394,6 +1400,11 @@ function renderCatPick(){
   if (!$('pkBody') || !pickCat) return;
   var all = sheetProducts(pickCat).slice().sort(byNameNat);
   if (pickExcl.length) all = all.filter(function(p){ return !pickExcl.some(function(t){ return subMatch(p, t); }); });
+  var ord = sheetOrderOf(pickCat);                      // ลำดับที่เจ้าของร้านกำหนดเอง (ถ้ามี)
+  if (ord.length) all = all.slice().sort(function(a, b){
+    var ka = sheetOrderIdx(a.name, ord), kb = sheetOrderIdx(b.name, ord);
+    return ka !== kb ? ka - kb : byNameNat(a, b);
+  });
   var list = pickGroup ? all.filter(function(p){ return subMatch(p, pickGroup); }) : all;
   $('pkTitle').textContent = catIcon(pickCat) + ' ' + pickCat + (pickGroup ? ' · ' + pickGroup : '') + ' · ' + list.length + ' รายการ';
   // รวมเป็นรายการเดียว ไม่แบ่งกลุ่มย่อย (ตามที่เจ้าของร้านสั่ง)
@@ -1724,7 +1735,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 37;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 38;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }

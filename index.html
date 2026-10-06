@@ -447,6 +447,48 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
   #printArea.pa4 hr{border-top:1px solid #999}
   #printArea.pa4 .ctr .shop{font-size:1.6em}
 }
+/* ---------- ขยายตัวหนังสือทั้งแอพ (อ่านง่ายขึ้นบนมือถือ) ---------- */
+header h1{font-size:20.5px} header .sub{font-size:13px} .live{font-size:12.5px}
+.tabbar button{font-size:12px} .tabbar button.on span:not(.ic){font-size:12.5px}
+.searchwrap input{font-size:17px} .searchwrap .ic{font-size:16px}
+.chip{font-size:15px} .chip .cnt{font-size:12.5px}
+.thbtn{font-size:14.5px}
+#viewSell .shophead .ss{font-size:14px}
+.shopinfo .sn{font-size:18.5px} .shopinfo .ss{font-size:12.5px}
+.shopsearch input{font-size:16.5px}
+.stabs button{font-size:15.5px}
+.slot .sic{font-size:35px} .slot .snm{font-size:15.5px} .slot .scnt,.slot .spr{font-size:13px} .slot .sgo{font-size:13.5px;padding:5px 16px}
+.cathead{font-size:13.5px}
+.cgrp .t{font-size:16px} .cgrp .n{font-size:12.5px} .cgrp .go{font-size:13px}
+.sellhead .sh-t{font-size:17.5px} .sellhead .sh-c{font-size:12.5px}
+.pbtn .nm{font-size:15.5px;height:42px} .pbtn .pr{font-size:23px}
+.pbtn .pr .k{font-size:12px} .pbtn .pr .u{font-size:12.5px}
+.pbtn .tag2{font-size:11.5px} .pbtn .st{font-size:12.5px}
+.pbtn .pimg .qb{font-size:12.5px;min-width:24px;height:24px} .pbtn .pimg .bdg{font-size:11px}
+.pbtn .qnum,.pbtn .pqty .qin{font-size:17px} .pbtn .qdel{font-size:12.5px}
+.qin{font-size:19px} .citem .qin{font-size:17.5px}
+.pdprice{font-size:33px} .pdprice .u{font-size:15.5px}
+.pdtag{font-size:13.5px} .pdrow{font-size:15px}
+.pkview{font-size:13.5px} .pkgrp{font-size:13px} .pkgrpname{font-size:16.5px}
+.pkchip b{font-size:14px} .pkchip .pc2{font-size:12.5px} .pkchip .pcb{font-size:11.5px}
+.pkhp{font-size:28px} .pkhp .u{font-size:14px} .pkhtag{font-size:12.5px} .pkhs{font-size:14.5px}
+.pksel{font-size:14.5px} .pksel .pkp{font-size:21px}
+.sibtile span{font-size:11.5px}
+.optcatbtn{font-size:14px}
+.srow .nm{font-size:15.5px} .srow .mt{font-size:12.5px}
+.toprow{font-size:14px} .mrow{font-size:14px} .mrow .n{font-size:12px}
+.sortrow select,.sortrow label{font-size:13.5px}
+.hint-note{font-size:12.5px}
+.sheet h2{font-size:18.5px}
+.citem .nm{font-size:15px} .citem .sub{font-size:12.5px} .citem .amt{font-size:15px}
+.qty .n{font-size:15px}
+.fld label{font-size:13px} .fld input,.fld textarea,.fld select{font-size:16px}
+.seg button{font-size:14.5px} .quick button{font-size:13.5px}
+.totline{font-size:14.5px} .totline.big{font-size:22px}
+.btn{font-size:17px}
+.receipt{font-size:14px} .receipt table{font-size:13.5px} .receipt .shop{font-size:17px} .receipt .sum{font-size:16.5px} .receipt .meta{font-size:12.5px}
+.saved{font-size:14.5px}
+.orow input{font-size:15px} .opts{font-size:12.5px}
 </style>
 </head>
 <body>
@@ -1666,7 +1708,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 32;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 33;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }

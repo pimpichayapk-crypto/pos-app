@@ -471,6 +471,11 @@ html.shopee .slot .spr{background:rgba(238,77,45,.10)}
 #catGrid .slot .snm{margin-top:0;flex:1;min-width:0;font-size:14px}
 #catGrid .slot .scnt{margin-left:auto;flex-shrink:0}
 #catGrid .slot .sgo{margin-top:0;flex-shrink:0;padding:5px 13px}
+/* ---------- ลอง: ชีตตัวเลือกเป็นแถวละสินค้า (คอลัมน์เดียว เต็มความกว้าง) ---------- */
+.pkchips{grid-template-columns:1fr;gap:6px}
+.pkchip{padding:7px 9px}
+.pkchip b{font-size:12.5px}
+.pkchip .pktile{width:36px;height:36px;font-size:18px}
 </style>
 </head>
 <body>
@@ -1715,7 +1720,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 45;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 46;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }

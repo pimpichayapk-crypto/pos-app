@@ -489,6 +489,17 @@ header h1{font-size:20.5px} header .sub{font-size:13px} .live{font-size:12.5px}
 .receipt{font-size:14px} .receipt table{font-size:13.5px} .receipt .shop{font-size:17px} .receipt .sum{font-size:16.5px} .receipt .meta{font-size:12.5px}
 .saved{font-size:14.5px}
 .orow input{font-size:15px} .opts{font-size:12.5px}
+/* ---------- ราคาให้เด่นชัดขึ้น ---------- */
+.slot .spr{font-size:15.5px;font-weight:900;color:var(--primary);background:rgba(15,118,110,.10);border-radius:99px;padding:3px 11px;margin-top:5px}
+html.shopee .slot .spr{background:rgba(238,77,45,.10)}
+.pbtn .pr{font-size:25px}
+.pbtn .pr .u{font-size:13px}
+.pkchip .pc2{font-size:14px;font-weight:800;color:var(--primary);margin-top:3px}
+.pkchip .pc2 .u{color:var(--muted);font-weight:700}
+.pkhead .pkhp{font-size:30px}
+.pksel .pkp{font-size:23px}
+.srow .mt b{color:var(--primary);font-weight:800}
+.citem .amt{font-size:16px;color:var(--primary)}
 </style>
 </head>
 <body>
@@ -1735,7 +1746,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 38;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 39;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }

@@ -478,6 +478,17 @@ html.shopee .slot .spr{background:rgba(238,77,45,.10)}
 .pkchip .pktile img{width:100%;height:100%;object-fit:cover;border-radius:11px}
 .pkchip b{font-size:13.5px}
 .pkchip .pc3{font-size:16.5px}
+/* ---------- รูปช่องหมวด ---------- */
+.slot .sic.has-img{width:100%;height:104px;border-radius:11px;overflow:hidden;background:none;display:block}
+.slot .sic.has-img img{width:100%;height:100%;object-fit:cover;display:block}
+#catGrid .slot .sic.has-img{width:58px;height:58px;flex-shrink:0}
+.cirow{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px dashed var(--line)}
+.ciic{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#eef2ff,#f0fdfa);display:flex;align-items:center;justify-content:center;font-size:21px;overflow:hidden;flex-shrink:0}
+.ciic img{width:100%;height:100%;object-fit:cover}
+.cinm{flex:1;min-width:0;font-weight:700;font-size:13px}
+.cist{display:block;font-size:11px;color:var(--muted);font-weight:600;margin-top:2px}
+.cibtn{border:1px solid var(--line);background:var(--card);border-radius:9px;padding:6px 9px;font-family:inherit;font-size:12px;font-weight:800;color:var(--primary);cursor:pointer;flex-shrink:0}
+.cibtn.del{color:#b91c1c}
 </style>
 </head>
 <body>
@@ -633,6 +644,11 @@ html.shopee .slot .spr{background:rgba(238,77,45,.10)}
           <button class="thbtn" data-th="shopee">🟠 ส้ม Shopee</button>
         </div>
         <div class="hint-note" style="margin-top:6px">โทนส้ม = หน้าตาแบบ Shopee (หัวร้าน/ราคา/ปุ่มเป็นสีส้ม) — เปลี่ยนได้ทันทีไม่กระทบข้อมูล</div>
+      </div>
+      <div class="fld"><label>🖼️ รูปช่องหมวด (แสดงบนหน้ากริดสินค้า / หน้าหมวดหมู่)</label>
+        <div id="catImgList"></div>
+        <input type="file" id="fCatImg" accept="image/*" style="display:none">
+        <div class="hint-note" style="margin-top:8px">แตะ <b>📷 เลือก</b> แล้วเลือกรูปจากเครื่อง — รูปจะขึ้นในช่องหมวดทันที (ไม่ใส่ก็ใช้ไอคอนเดิม)</div>
       </div>
       <div class="fld"><label>เตือนเมื่อสต็อกต่ำกว่าเกณฑ์</label>
         <select id="sWarn"><option value="1">เตือน</option><option value="0">ไม่ต้องเตือน</option></select></div>
@@ -1029,6 +1045,12 @@ function catIcon(c){
   for (var i = 0; i < ks.length; i++) if (String(c || '').indexOf(ks[i]) === 0) return CAT_ICON[ks[i]];
   return '📦';
 }
+// รูปช่องหมวด (ตั้งใน ⚙️ ตั้งค่า): settings.catImages = { 'ชื่อหมวด': dataURL }
+function catImages(){ return (settings && settings.catImages) || {}; }
+function slotIconHtml(cat){
+  var im = catImages()[cat];
+  return im ? '<span class="sic has-img"><img src="' + esc(im) + '" alt=""></span>' : '<span class="sic">' + catIcon(cat) + '</span>';
+}
 // หมวดที่ตั้งเป็น “ตัวเลือก”: ในหน้าสินค้าทั้งหมดจะโชว์เป็นช่องใหญ่ช่องเดียว (กดแล้วเด้งชีตตัวเลือก)
 function optionCats(){ return (settings && settings.optionCats) || []; }
 function isOptionCat(c){ return optionCats().indexOf(c) >= 0; }
@@ -1152,7 +1174,7 @@ function renderCatGrid(){
     var lo = items.length ? Math.min.apply(null, items) : 0, hi = items.length ? Math.max.apply(null, items) : 0;
     var rng = (lo && hi) ? (lo === hi ? money(lo) : money(lo) + ' – ' + money(hi)) : '';
     return '<button class="slot" data-cat="' + esc(c.name) + '">' +
-      '<span class="sic">' + catIcon(c.name) + '</span>' +
+      slotIconHtml(c.name) +
       '<span class="snm">' + esc(c.name) + '</span>' +
       '<span class="scnt">' + c.n + ' รายการ</span>' +
       '<span class="sgo">เลือก ›</span></button>';
@@ -1273,7 +1295,7 @@ function renderProducts(){
     var prices = items.map(function(p){ return n2(p.price); }).filter(function(v){ return v > 0; });
     var range = prices.length ? money(Math.min.apply(null, prices)) + ' – ' + money(Math.max.apply(null, prices)) : '';
     return '<button class="slot optcat" data-cat="' + esc(cn) + '">' +
-      '<span class="sic">' + catIcon(cn) + '</span>' +
+      slotIconHtml(cn) +
       '<span class="snm">' + esc(cn) + '</span>' +
       '<span class="scnt">' + items.length + ' รายการ</span>' +
       '<span class="sgo">เลือก ›</span></button>';
@@ -1283,7 +1305,7 @@ function renderProducts(){
     var prices = items.map(function(p){ return n2(p.price); }).filter(function(v){ return v > 0; });
     var range = prices.length ? money(Math.min.apply(null, prices)) + ' – ' + money(Math.max.apply(null, prices)) : '';
     return '<button class="slot optcat" data-cat="' + esc(g.cat) + '" data-tok="' + esc(g.token) + '">' +
-      '<span class="sic">' + catIcon(g.cat) + '</span>' +
+      slotIconHtml(g.cat) +
       '<span class="snm">' + esc(g.label || g.token) + '</span>' +
       '<span class="scnt">' + items.length + ' รายการ</span>' +
       '<span class="sgo">เลือก ›</span></button>';
@@ -1722,7 +1744,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 49;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 50;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }
@@ -2512,7 +2534,55 @@ function renderSettings(){
   if (!f || f.id !== 'sWarn') $('sWarn').value = settings.warnLow === '0' ? '0' : '1';
   renderPaperSeg();
   applyTheme(settings.theme);
+  renderCatImgList();
 }
+
+// ---------- รูปช่องหมวด (⚙️ ตั้งค่า) ----------
+var catImgTarget = '';
+function renderCatImgList(){
+  if (!$('catImgList')) return;
+  var ims = catImages();
+  $('catImgList').innerHTML = catList().map(function(c){
+    var im = ims[c.name];
+    return '<div class="cirow" data-cat="' + esc(c.name) + '">' +
+      '<span class="ciic">' + (im ? '<img src="' + esc(im) + '" alt="">' : catIcon(c.name)) + '</span>' +
+      '<span class="cinm">' + esc(c.name) + '<span class="cist">' + (im ? 'มีรูปแล้ว' : 'ยังไม่มีรูป — ใช้ไอคอนเดิม') + '</span></span>' +
+      '<button class="cibtn" data-act="pick">📷 เลือก</button>' +
+      (im ? '<button class="cibtn del" data-act="del">✕</button>' : '') +
+    '</div>';
+  }).join('') || '<div class="hint-note">ยังไม่มีหมวด</div>';
+  Array.prototype.forEach.call($('catImgList').querySelectorAll('.cirow'), function(row){
+    var cat = row.getAttribute('data-cat');
+    var pk = row.querySelector('[data-act="pick"]'), dl = row.querySelector('[data-act="del"]');
+    if (pk) pk.onclick = function(){ catImgTarget = cat; $('fCatImg').click(); };
+    if (dl) dl.onclick = function(){
+      var o = Object.assign({}, catImages()); delete o[cat];
+      settings.catImages = o; S.saveSettings({ catImages: o }).catch(function(){});
+      renderCatImgList(); renderSell(); toast('🗑️ ลบรูปช่อง ' + cat + ' แล้ว');
+    };
+  });
+}
+$('fCatImg').onchange = function(e){
+  var f = e.target.files[0], cat = catImgTarget;
+  e.target.value = '';
+  if (!f || !cat) return;
+  function done(bm){
+    var MAX = 600, w = bm.width, h = bm.height;
+    if (w > h && w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+    else if (h >= w && h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+    var c = document.createElement('canvas'); c.width = w; c.height = h;
+    c.getContext('2d').drawImage(bm, 0, 0, w, h);
+    try { if (bm.close) bm.close(); } catch(e2){}
+    var out = c.toDataURL('image/jpeg', 0.75);
+    if (out.length > 900000) { toast('⚠️ รูปใหญ่เกินไป — ลองรูปที่เล็กลง'); return; }
+    var o = Object.assign({}, catImages()); o[cat] = out;
+    settings.catImages = o; S.saveSettings({ catImages: o }).catch(function(){});
+    renderCatImgList(); renderSell();
+    toast('🖼️ ใส่รูปช่อง ' + cat + ' แล้ว');
+  }
+  try { createImageBitmap(f).then(done, function(){ toast('⚠️ อ่านรูปไม่ได้'); }); }
+  catch (err) { toast('⚠️ อ่านรูปไม่ได้'); }
+};
 
 // ---------- sheets ----------
 function setOverlay(id, on){ $(id).classList.toggle('show', on); }

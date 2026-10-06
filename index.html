@@ -1396,20 +1396,8 @@ function renderCatPick(){
   if (pickExcl.length) all = all.filter(function(p){ return !pickExcl.some(function(t){ return subMatch(p, t); }); });
   var list = pickGroup ? all.filter(function(p){ return subMatch(p, pickGroup); }) : all;
   $('pkTitle').textContent = catIcon(pickCat) + ' ' + pickCat + (pickGroup ? ' · ' + pickGroup : '') + ' · ' + list.length + ' รายการ';
-  var subs = pickGroup ? [] : subTokensOf(list), used = {}, groups = [];
-  subs.forEach(function(s){
-    var g = list.filter(function(p){ return subMatch(p, s.t) && !used[p.id]; });
-    if (!g.length) return;
-    g.forEach(function(p){ used[p.id] = 1; });
-    groups.push({ name: s.t + ' (' + g.length + ')', items: g });
-  });
-  if (!groups.length) groups.push({ name: pickGroup || ('สินค้า (' + list.length + ')'), items: list });
-  else {
-    var rest = list.filter(function(p){ return !used[p.id]; });
-    if (rest.length) groups.push({ name: 'อื่น ๆ (' + rest.length + ')', items: rest });
-  }
-  var html = groups.map(function(g){
-    return '<div class="pkgrpname">' + esc(String(g.name).replace(/\s*\(\d+\)$/, '')) + '</div><div class="pkchips">' + g.items.map(function(p){
+  // รวมเป็นรายการเดียว ไม่แบ่งกลุ่มย่อย (ตามที่เจ้าของร้านสั่ง)
+  var html = list.length ? '<div class="pkchips">' + list.map(function(p){
       var cq = cartQtyOfProduct(p.id);
       var tile = p.image ? '<img src="' + esc(p.image) + '" alt="">' : catIcon(catNameOf(p));
       return '<button class="pkchip' + (String(pkPick) === String(p.id) ? ' on' : '') + '" data-id="' + esc(p.id) + '">' +
@@ -1417,8 +1405,7 @@ function renderCatPick(){
         '<span class="pkname"><b>' + esc(p.name) + '</b><span class="pc2">' + money(p.price) + ' / ' + esc(p.unit || 'ชิ้น') +
         (hasOptions(p) ? ' · ' + optionsOf(p).length + ' รหัส' : '') + '</span>' +
         (cq > 0 ? '<span class="pcb">ในตะกร้า ' + fmtQty(cq) + '</span>' : '') + '</span></button>';
-    }).join('') + '</div>';
-  }).join('');
+    }).join('') + '</div>' : '';
   if (!list.length) html = '<div class="hint-note">ยังไม่มีสินค้าในหมวดนี้</div>';
   var p = pkSel(), key = p ? optKey(p.id, '') : '', q = p ? n2(cart[key]) : 0;
   var ep = p ? effectivePrice(p, cartQtyOfProduct(p.id)) : null;
@@ -1737,7 +1724,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 36;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 37;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }

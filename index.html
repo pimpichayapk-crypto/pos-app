@@ -454,6 +454,8 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
 html.shopee .slot .spr{background:rgba(238,77,45,.10)}
 /* ---------- ราคาในชีตตัวเลือก: ชิดมุมขวา ไม่มี "/ หน่วย" ---------- */
 .pkchip .pc3{margin-left:auto;flex-shrink:0;text-align:right;font-size:14px;font-weight:900;color:var(--primary);white-space:nowrap;letter-spacing:-.3px;padding-left:2px}
+/* ---------- หน้ากริด (สินค้าทั้งหมด) ไม่โชว์ราคา — ราคาดูในชีตตัวเลือก ---------- */
+#pgrid .pbtn .pr{display:none}
 </style>
 </head>
 <body>
@@ -1131,7 +1133,6 @@ function renderCatGrid(){
       '<span class="sic">' + catIcon(c.name) + '</span>' +
       '<span class="snm">' + esc(c.name) + '</span>' +
       '<span class="scnt">' + c.n + ' รายการ</span>' +
-      (rng ? '<span class="spr">' + rng + '</span>' : '') +
       '<span class="sgo">เลือก ›</span></button>';
   }).join('');
   $('catCount').textContent = 'แตะหมวดเพื่อเลือกสินค้าในหมวดนั้น · ' + total + ' รายการ · ' + cats.length + ' หมวด';
@@ -1253,7 +1254,6 @@ function renderProducts(){
       '<span class="sic">' + catIcon(cn) + '</span>' +
       '<span class="snm">' + esc(cn) + '</span>' +
       '<span class="scnt">' + items.length + ' รายการ</span>' +
-      (range ? '<span class="spr">' + range + '</span>' : '') +
       '<span class="sgo">เลือก ›</span></button>';
   }).join('');
   slotHtml += grpSlots.map(function(g){
@@ -1264,7 +1264,6 @@ function renderProducts(){
       '<span class="sic">' + catIcon(g.cat) + '</span>' +
       '<span class="snm">' + esc(g.label || g.token) + '</span>' +
       '<span class="scnt">' + items.length + ' รายการ</span>' +
-      (range ? '<span class="spr">' + range + '</span>' : '') +
       '<span class="sgo">เลือก ›</span></button>';
   }).join('');
   var cardList = list.filter(function(p){
@@ -1701,7 +1700,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 41;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 42;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }

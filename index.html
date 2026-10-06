@@ -453,7 +453,7 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
 .slot .spr{font-size:15.5px;font-weight:900;color:var(--primary);background:rgba(15,118,110,.10);border-radius:99px;padding:3px 11px;margin-top:5px}
 html.shopee .slot .spr{background:rgba(238,77,45,.10)}
 /* ---------- ราคาในชีตตัวเลือก: ชิดมุมขวา ไม่มี "/ หน่วย" ---------- */
-.pkchip .pc3{margin-left:auto;flex-shrink:0;text-align:right;font-size:14px;font-weight:900;color:var(--primary);white-space:nowrap;letter-spacing:-.3px;padding-left:2px}
+.pkchip .pc3{margin-left:auto;flex-shrink:0;text-align:right;font-size:16.5px;font-weight:900;color:var(--primary);white-space:nowrap;letter-spacing:-.3px;padding-left:4px}
 /* ---------- หน้ากริด (สินค้าทั้งหมด) ไม่โชว์ราคา — ราคาดูในชีตตัวเลือก ---------- */
 #pgrid .pbtn .pr{display:none}
 </style>
@@ -1700,7 +1700,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 42;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 43;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }

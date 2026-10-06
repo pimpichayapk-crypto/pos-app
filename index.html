@@ -1272,8 +1272,10 @@ function renderProducts(){
     }).map(function(c){ return c.name; });
     grpSlots = optGroups().filter(function(g){ return groupItems(list, g).length > 0; });
   }
+  // สินค้าที่ถูกกลุ่มย่อย (optGroups) ครอบอยู่แล้ว → ไม่นับซ้ำในช่องของหมวด
+  function grpCovers(p){ return grpSlots.some(function(g){ return catNameOf(p) === g.cat && subMatch(p, g.token); }); }
   var slotHtml = slotCats.map(function(cn){
-    var items = list.filter(function(p){ return catNameOf(p) === cn; });
+    var items = list.filter(function(p){ return catNameOf(p) === cn && !grpCovers(p); });
     var prices = items.map(function(p){ return n2(p.price); }).filter(function(v){ return v > 0; });
     var range = prices.length ? money(Math.min.apply(null, prices)) + ' – ' + money(Math.max.apply(null, prices)) : '';
     return '<button class="slot optcat" data-cat="' + esc(cn) + '">' +
@@ -1726,7 +1728,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 34;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 35;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }

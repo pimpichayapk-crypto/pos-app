@@ -1043,6 +1043,9 @@ function catIcon(c){
 // หมวดที่ตั้งเป็น “ตัวเลือก”: ในหน้าสินค้าทั้งหมดจะโชว์เป็นช่องใหญ่ช่องเดียว (กดแล้วเด้งชีตตัวเลือก)
 function optionCats(){ return (settings && settings.optionCats) || []; }
 function isOptionCat(c){ return optionCats().indexOf(c) >= 0; }
+// กลุ่มที่ตั้งให้โชว์เป็น “ช่องใหญ่” ในหน้าสินค้าทั้งหมด เช่น {cat:'เชือก', token:'ฝ้าย', label:'เชือกฝ้าย'}
+function optGroups(){ return (settings && settings.optGroups) || []; }
+function groupItems(list, g){ return list.filter(function(p){ return catNameOf(p) === g.cat && subMatch(p, g.token); }); }
 // ---------- เรียงเลขตามธรรมชาติ (natural sort): #4 < #6 < #10 และ ¾" < 1" < 1¼" < 2" ----------
 var FRACV = { '¼': 0.25, '½': 0.5, '¾': 0.75, '⅓': 0.3333, '⅔': 0.6667, '⅛': 0.125, '⅜': 0.375, '⅝': 0.625, '⅞': 0.875 };
 function natKey(s){
@@ -1261,12 +1264,13 @@ function renderProducts(){
       '</div></div>';
   }
   // ---- หมวด “ตัวเลือก”: โชว์เป็นช่องใหญ่ช่องเดียวบนสุด แทนการ์ดรายตัว (ตอนดูรวม ๆ ไม่ได้ค้นหา/กรอง) ----
-  var slotCats = [];
+  var slotCats = [], grpSlots = [];
   var qTxt = ($('q') ? ($('q').value || '') : '').trim();   // ห้ามใช้ตัวแปรชื่อ q (ชนกับ id="q" ของช่องค้นหา)
   if (!qTxt && !sellCat) {
     slotCats = catList().filter(function(c){
       return isOptionCat(c.name) && list.some(function(p){ return catNameOf(p) === c.name; });
     }).map(function(c){ return c.name; });
+    grpSlots = optGroups().filter(function(g){ return groupItems(list, g).length > 0; });
   }
   var slotHtml = slotCats.map(function(cn){
     var items = list.filter(function(p){ return catNameOf(p) === cn; });
@@ -1279,7 +1283,21 @@ function renderProducts(){
       (range ? '<span class="spr">' + range + '</span>' : '') +
       '<span class="sgo">เลือก ›</span></button>';
   }).join('');
-  var cardList = slotCats.length ? list.filter(function(p){ return slotCats.indexOf(catNameOf(p)) < 0; }) : list;
+  slotHtml += grpSlots.map(function(g){
+    var items = groupItems(list, g);
+    var prices = items.map(function(p){ return n2(p.price); }).filter(function(v){ return v > 0; });
+    var range = prices.length ? money(Math.min.apply(null, prices)) + ' – ' + money(Math.max.apply(null, prices)) : '';
+    return '<button class="slot optcat" data-cat="' + esc(g.cat) + '" data-tok="' + esc(g.token) + '">' +
+      '<span class="sic">' + catIcon(g.cat) + '</span>' +
+      '<span class="snm">' + esc(g.label || g.token) + '</span>' +
+      '<span class="scnt">' + items.length + ' รายการ</span>' +
+      (range ? '<span class="spr">' + range + '</span>' : '') +
+      '<span class="sgo">เลือก ›</span></button>';
+  }).join('');
+  var cardList = list.filter(function(p){
+    if (slotCats.indexOf(catNameOf(p)) >= 0) return false;
+    return !grpSlots.some(function(g){ return catNameOf(p) === g.cat && subMatch(p, g.token); });
+  });
   var html;
   if (grouped) {
     html = catList().map(function(c){
@@ -1299,7 +1317,7 @@ function renderProducts(){
     b.onclick = function(){ openCatPick(b.getAttribute('data-cat')); };
   });
   Array.prototype.forEach.call($('pgrid').querySelectorAll('.optcat'), function(b){
-    b.onclick = function(){ openCatPick(b.getAttribute('data-cat')); };
+    b.onclick = function(){ openCatPick(b.getAttribute('data-cat'), b.getAttribute('data-tok') || ''); };
   });
   Array.prototype.forEach.call($('pgrid').querySelectorAll('.pbtn'), function(card){
     var id = card.getAttribute('data-id');
@@ -1708,7 +1726,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 33;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 34;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }

@@ -1122,6 +1122,8 @@ function renderCatGrid(){
   });
 }
 function backToCats(){ setSellTab('cat'); sellCat = null; sellSub = ''; $('q').value = ''; renderSell(); window.scrollTo(0, 0); }
+// ปุ่ม ‹ ย้อนกลับ ในหัวหน้าสินค้าทั้งหมด = ล้างตัวกรอง/คำค้น แล้ว "อยู่หน้าสินค้าทั้งหมดเหมือนเดิม" (ไม่เด้งไปหน้าหมวดหมู่)
+function backToList(){ setSellTab('all'); sellCat = null; sellSub = ''; $('q').value = ''; renderSell(); window.scrollTo(0, 0); }
 function renderCats(){ renderSell(); }
 function isWholesaleQuery(q){ return q === 'ยกแพ็ค' || q === 'ยกแพค' || q === 'แพ็ค' || q === 'แพค' || q === 'ส่ง' || q === 'ราคาส่ง' || q === 'ราคาโหล' || q === 'โหล' || q === 'wholesale' || q === 'ws'; }
 function filteredProducts(){
@@ -1642,7 +1644,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 29;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 30;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }
@@ -2451,7 +2453,7 @@ function applyTheme(t){
   document.documentElement.classList.toggle('shopee', th === 'shopee');
   if ($('thBtns')) Array.prototype.forEach.call($('thBtns').querySelectorAll('.thbtn'), function(b){ b.classList.toggle('on', b.getAttribute('data-th') === th); });
 }
-$('btnBackCat').onclick = backToCats;
+$('btnBackCat').onclick = backToList;
 Array.prototype.forEach.call($('thBtns').querySelectorAll('.thbtn'), function(b){
   b.onclick = function(){
     var th = b.getAttribute('data-th');

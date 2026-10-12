@@ -1747,7 +1747,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 55;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 56;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }
@@ -2725,7 +2725,7 @@ function receiptDocHTML(o){
   if (p === 'l6080') return labelCompactHTML(o, false);
   var isVoid = o.status === 'void';
   var rows = (o.items||[]).map(function(i){
-    return '<tr><td>' + esc(i.name) + (i.optionCode ? ' [' + esc(i.optionCode) + ']' : '') + (i.wholesale ? ' (ราคาส่ง)' : '') + '<div class="sub">' + fmtQty(i.qty) + ' × ' + fmt(i.price) + ' ' + esc(i.unit || '') + '</div></td>' +
+    return '<tr><td>' + esc(i.name) + (i.optionCode ? ' [' + esc(i.optionCode) + ']' : '') + (i.wholesale ? ' (ราคาส่ง)' : '') + '<div class="sub">' + fmtQty(i.qty) + ' × ' + fmt(i.price) + esc(unitTxt(i.unit)) + '</div></td>' +
       '<td class="r">' + fmt(itemAmount(i)) + '</td></tr>';
   }).join('');
   var payTxt = (o.pay && o.pay.method === 'transfer') ? 'โอน' : 'เงินสด';
@@ -2775,6 +2775,10 @@ function printReceipt(o){
   else setTimeout(firePrint, 80);
 }
 // ---------- 📤 แชร์/บันทึกใบเสร็จเป็นรูป PNG (ทางที่ใช้ได้จากไอคอนหน้าจอโฮมของ iPhone) ----------
+function unitTxt(u){ // หน่วยนับบนใบเสร็จ: ไม่แสดงคำว่า “ชิ้น” (ตามที่สั่ง) — หน่วยอื่นยังแสดง
+  u = String(u == null ? '' : u).replace(/\s+/g, ' ').replace(/^ | $/g, '');
+  return (u && u !== 'ชิ้น') ? ' ' + u : '';
+}
 function receiptOps(o){
   var isVoid = o.status === 'void';
   var payTxt = (o.pay && o.pay.method === 'transfer') ? 'โอน' : 'เงินสด';
@@ -2788,7 +2792,7 @@ function receiptOps(o){
   ops.push({ t:'hr' });
   (o.items || []).forEach(function(i){
     ops.push({ t:'row', l: i.name + (i.optionCode ? ' [' + i.optionCode + ']' : '') + (i.wholesale ? ' (ราคาส่ง)' : ''), r: fmt(itemAmount(i)) });
-    ops.push({ t:'row', l: fmtQty(i.qty) + ' × ' + fmt(i.price) + ' ' + (i.unit || ''), r:'', dim:true });
+    ops.push({ t:'row', l: fmtQty(i.qty) + ' × ' + fmt(i.price) + unitTxt(i.unit), r:'', dim:true });
   });
   ops.push({ t:'hr' });
   ops.push({ t:'row', l:'รวม', r: fmt(o.subtotal) });

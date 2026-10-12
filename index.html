@@ -640,8 +640,8 @@ html.shopee .slot .spr{background:rgba(238,77,45,.10)}
         </select></div>
       <div class="fld"><label>ความหนาตัวอักษรบนใบเสร็จ</label>
         <select id="sInk">
-          <option value="thin">บางมาก (ค่าเริ่มต้น) — เส้นเล็กสุด</option>
-          <option value="normal">บาง (แนะนำ) — ปกติ</option>
+          <option value="thin">บางมาก — เส้นเล็กสุด (อาจดูจาง)</option>
+          <option value="normal">บาง + คม (แนะนำ) — เส้น 2 จุด เท่าฟอนต์ในเครื่องพิมพ์</option>
           <option value="bold">หนา/ดำเข้ม — อ่านง่ายในที่แสงน้อย</option>
         </select>
         <div class="hint-note" style="margin-top:6px">ใช้กับการพิมพ์เป็น <b>รูปใบเสร็จ (PNG)</b> เป็นหลัก — ถ้าตัวอักษรดูดำ/หนาเกินไป เปลี่ยนเป็น “บางมาก” แล้วพิมพ์ทดสอบใหม่</div>
@@ -919,8 +919,8 @@ function localLoad(){
     settings = JSON.parse(localStorage.getItem(LS.s) || '{}');
   } catch(e){ products = []; orders = []; settings = {}; }
   products.forEach(function(p){ if (!p.id) p.id = uid(); });
-  if (!settings.shopName) settings = Object.assign({ shopName: 'ร้านของฉัน', promptpay: '', seller: '', footer: 'ขอบคุณที่อุดหนุนครับ/ค่ะ', warnLow: '1', paper: '58', ink: 'thin' }, settings);
-  if (!settings.ink) settings.ink = 'thin';
+  if (!settings.shopName) settings = Object.assign({ shopName: 'ร้านของฉัน', promptpay: '', seller: '', footer: 'ขอบคุณที่อุดหนุนครับ/ค่ะ', warnLow: '1', paper: '58', ink: 'normal' }, settings);
+  if (!settings.ink) settings.ink = 'normal';
   if (!settings.paper) settings.paper = '58';
 }
 function localSave(){
@@ -1756,7 +1756,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 58;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 59;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }
@@ -2697,7 +2697,7 @@ function renderPaperSeg(){
   var p = curPaper();
   if ($('paperSel') && (!document.activeElement || document.activeElement.id !== 'paperSel')) $('paperSel').value = p;
   if ($('sPaper') && (!document.activeElement || document.activeElement.id !== 'sPaper')) $('sPaper').value = p;
-  if ($('sInk') && (!document.activeElement || document.activeElement.id !== 'sInk')) $('sInk').value = settings.ink || 'thin';
+  if ($('sInk') && (!document.activeElement || document.activeElement.id !== 'sInk')) $('sInk').value = settings.ink || 'normal';
   if ($('btnPrint')) $('btnPrint').textContent = '🖨️ พิมพ์ใบเสร็จ (' + PAPERS[p].label + ')';
 }
 function setPaper(p){
@@ -2825,8 +2825,9 @@ function receiptAmtWeight(op){ return '400'; }
 // ---- ความหนาของเส้นตัวอักษร: เครื่องพิมพ์ความร้อนพิมพ์ได้แค่ ดำ/ขาว ----
 // พิกเซลเทาที่ขอบตัวอักษรจะถูกเครื่องพิมพ์ลายเป็นเม็ดดอท → ตัวอักษรดูหนา/ดำ/ไม่เท่ากัน
 // จึงแปลงรูปเป็นขาว-ดำล้วน (1-bit) และเลือก “ตัดเทา” มาก/น้อยตามระดับที่ตั้งไว้
-var INK_LEVELS = { thin: 70, normal: 100, bold: 165 };
-function inkThreshold(){ var k = settings.ink; return INK_LEVELS[k] ? INK_LEVELS[k] : INK_LEVELS.thin; }
+var INK_LEVELS = { thin: 85, normal: 115, bold: 165 };
+// วัดจริง (รูป 58mm): 70 → เส้นหนา 1 จุด 12% (ดูจาง/ขาด) · 85 → 8.6% · 115 → ~4% (คมสุดที่ยังบาง) · 165 → หนา/ดำ
+function inkThreshold(){ var k = settings.ink; return INK_LEVELS[k] ? INK_LEVELS[k] : INK_LEVELS.normal; }
 function binarizeCanvas(cv){
   var ctx = cv.getContext('2d'), TH = inkThreshold();
   var img = ctx.getImageData(0, 0, cv.width, cv.height), px = img.data;
@@ -2982,7 +2983,7 @@ $('btnTestShare').onclick = function(){ shareReceiptImage(sampleOrder()); };
 $('paperSel').onchange = function(){ setPaper($('paperSel').value); };
 $('sPaper').onchange = function(){ setPaper($('sPaper').value); };
 $('sInk').onchange = function(){
-  settings.ink = INK_LEVELS[$('sInk').value] ? $('sInk').value : 'thin';
+  settings.ink = INK_LEVELS[$('sInk').value] ? $('sInk').value : 'normal';
   S.saveSettings({ ink: settings.ink }).catch(function(){});
   toast('✍️ ความหนาตัวอักษร: ' + ({ thin:'บางมาก', normal:'บาง', bold:'หนา' }[settings.ink] || 'บาง'));
 };

@@ -654,6 +654,7 @@ html.shopee .slot .spr{background:rgba(238,77,45,.10)}
         <select id="sWarn"><option value="1">เตือน</option><option value="0">ไม่ต้องเตือน</option></select></div>
       <button class="btn" id="btnSaveSettings">💾 บันทึกการตั้งค่า</button>
       <button class="btn ghost" id="btnTestPrint">🖨️ ทดสอบพิมพ์ใบเสร็จตัวอย่าง</button>
+      <button class="btn ghost" id="btnTestShare">📤 ทดสอบแชร์รูปใบเสร็จ (ตัวอย่าง)</button>
     </div>
     <div class="card">
       <div class="sect" style="margin-top:0">สถานะระบบ</div>
@@ -710,10 +711,12 @@ html.shopee .slot .spr{background:rgba(238,77,45,.10)}
   </div>
   <button class="btn ghost" id="btnCopy">📋 คัดลอกข้อความใบเสร็จ</button>
   <button class="btn ghost" id="btnPrint">🖨️ พิมพ์ใบเสร็จ</button>
+  <button class="btn ghost" id="btnShareImg">📤 แชร์/บันทึกรูปใบเสร็จ (PNG)</button>
   <div class="hint-note" id="printHint">💡 <b>แอพนี้พิมพ์ออกเครื่องพิมพ์เองไม่ได้ตรง ๆ</b> — กดพิมพ์แล้วเลือกวิธีตามเครื่องที่มี:<br>
     • <b>AirPrint</b> (เครื่องพิมพ์บ้าน Epson/HP/Canon, Star รุ่น AirPrint) → เลือกเครื่องพิมพ์จากหน้าต่างพิมพ์ได้เลย <b>จบในขั้นตอนเดียว</b><br>
     • <b>ความร้อน LAN / WiFi / Bluetooth</b> → กดพิมพ์ → <b>Save to Files</b> เก็บเป็น PDF → เปิด<b>แอพที่พิมพ์ PDF ได้</b> (เลือกตัวที่ตรงกับเครื่อง เช่น BR RawPrinter, PDF Thermal Print, Thermer, Pos printer PrinterApp, แอพของยี่ห้อ) → เลือกเครื่อง/ใส่ IP → พิมพ์<br>
-    • <b>ยังไม่มีเครื่องพิมพ์</b> → กดพิมพ์ → <b>Save to Files</b> แล้วส่งไฟล์ PDF ให้ลูกค้าทาง LINE ได้เลย</div>
+    • <b>ยังไม่มีเครื่องพิมพ์</b> → กดพิมพ์ → <b>Save to Files</b> แล้วส่งไฟล์ PDF ให้ลูกค้าทาง LINE ได้เลย<br>
+    • 📱 <b>เปิดแอพจากไอคอนหน้าจอโฮม (iPhone)</b> หน้าต่างพิมพ์จะไม่ขึ้น (ข้อจำกัดของ Apple) → ใช้ปุ่ม <b>📤 แชร์/บันทึกรูปใบเสร็จ</b> แล้วเลือก <b>BR RawPrinter</b> เพื่อพิมพ์ หรือ <b>บันทึกรูป</b> ไว้ส่งลูกค้า</div>
   <button class="btn danger" id="btnVoid" style="display:none">↩️ ยกเลิกบิลนี้ (คืนสต็อก)</button>
   <button class="btn danger" id="btnDelBill" style="display:none">🗑️ ลบบิลนี้ออกจากประวัติ</button>
 </div>
@@ -1744,7 +1747,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 53;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 54;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }
@@ -2771,6 +2774,161 @@ function printReceipt(o){
   if (isIOS()) firePrint();
   else setTimeout(firePrint, 80);
 }
+// ---------- 📤 แชร์/บันทึกใบเสร็จเป็นรูป PNG (ทางที่ใช้ได้จากไอคอนหน้าจอโฮมของ iPhone) ----------
+function receiptOps(o){
+  var isVoid = o.status === 'void';
+  var payTxt = (o.pay && o.pay.method === 'transfer') ? 'โอน' : 'เงินสด';
+  var ops = [
+    { t:'shop', s: settings.shopName || 'ร้านของฉัน' },
+    { t:'ctr',  s: isVoid ? '*** ยกเลิกบิล ***' : 'ใบเสร็จรับเงิน' },
+    { t:'ctr',  s: 'เลขที่ #' + (o.no || '') },
+    { t:'ctr',  s: thaiDateTime(toMs(o.at)) }
+  ];
+  if (o.seller) ops.push({ t:'ctr', s: 'ผู้ขาย: ' + o.seller });
+  ops.push({ t:'hr' });
+  (o.items || []).forEach(function(i){
+    ops.push({ t:'row', l: i.name + (i.optionCode ? ' [' + i.optionCode + ']' : '') + (i.wholesale ? ' (ราคาส่ง)' : ''), r: fmt(itemAmount(i)) });
+    ops.push({ t:'row', l: fmtQty(i.qty) + ' × ' + fmt(i.price) + ' ' + (i.unit || ''), r:'', dim:true });
+  });
+  ops.push({ t:'hr' });
+  ops.push({ t:'row', l:'รวม', r: fmt(o.subtotal) });
+  if (n2(o.discount)) ops.push({ t:'row', l:'ส่วนลด', r: '-' + fmt(o.discount) });
+  ops.push({ t:'row', l:'ยอดสุทธิ', r: fmt(o.total), big:true });
+  ops.push({ t:'row', l:'ชำระโดย', r: payTxt });
+  if (o.pay && o.pay.method === 'cash'){
+    ops.push({ t:'row', l:'รับเงิน', r: fmt(o.pay.received) });
+    ops.push({ t:'row', l:'เงินทอน', r: fmt(o.pay.change) });
+  }
+  ops.push({ t:'hr' });
+  ops.push({ t:'ctr', s: settings.footer || 'ขอบคุณที่อุดหนุนครับ/ค่ะ' });
+  return ops;
+}
+function canvasFont(style, size){ return style + ' ' + size + 'px -apple-system,"Helvetica Neue",Helvetica,Arial,"Thonburi",sans-serif'; }
+function wrapToWidth(ctx, text, maxW){
+  text = String(text == null ? '' : text);
+  if (!text) return [''];
+  if (ctx.measureText(text).width <= maxW) return [text];
+  var out = [], cur = '';
+  for (var i = 0; i < text.length; i++){
+    var ch = text.charAt(i);
+    if (cur && ctx.measureText(cur + ch).width > maxW){ out.push(cur); cur = ''; }
+    cur += ch;
+  }
+  if (cur) out.push(cur);
+  return out;
+}
+function receiptCanvas(o){
+  var p = curPaper();
+  var W = (p === '80') ? 576 : 384;            // 58mm = 384 จุด (203dpi) · 80mm = 576 จุด
+  var pad = 16, base = (p === '80') ? 17 : 16, big = Math.round(base * 1.35), shop = Math.round(base * 1.5);
+  var tear = 80;                                // ที่ว่างท้ายไว้ฉีก (A58-pro ไม่มีคัตเตอร์)
+  var ops = receiptOps(o);
+  var cv = document.createElement('canvas');
+  var ctx = cv.getContext('2d');
+  var inner = W - pad * 2;
+  var y = pad;
+  ops.forEach(function(op){                     // pass 1: วัดความสูงจริง (รวมการตัดบรรทัด)
+    if (op.t === 'shop'){ y += shop + 12; return; }
+    if (op.t === 'ctr'){ ctx.font = canvasFont('400', base); y += wrapToWidth(ctx, op.s, inner).length * (base + 2) + 8; return; }
+    if (op.t === 'hr'){ y += 16; return; }
+    if (op.t === 'row'){
+      var size = op.big ? big : base;
+      ctx.font = canvasFont(op.big ? '800' : '600', size);
+      var rw = op.r ? ctx.measureText(op.r).width + 12 : 0;
+      y += wrapToWidth(ctx, op.l, inner - rw).length * (size + 3) + 7;
+    }
+  });
+  var H = Math.ceil(y + pad + tear);
+  cv.width = W; cv.height = H;
+  ctx = cv.getContext('2d');
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+  ctx.textBaseline = 'top';
+  y = pad;
+  function dash(){
+    ctx.save(); ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(pad, y + 8); ctx.lineTo(W - pad, y + 8); ctx.stroke(); ctx.restore(); y += 16;
+  }
+  function line(s, size, weight, align){
+    ctx.font = canvasFont(weight, size); ctx.fillStyle = '#000';
+    wrapToWidth(ctx, s, inner).forEach(function(t){
+      var x = pad;
+      if (align === 'c') x = Math.round((W - ctx.measureText(t).width) / 2);
+      ctx.fillText(t, x, y); y += size + 2;
+    });
+    y += 6;
+  }
+  ops.forEach(function(op){                     // pass 2: วาด
+    if (op.t === 'shop'){ line(op.s, shop, '800', 'c'); return; }
+    if (op.t === 'ctr'){ line(op.s, base, '400', 'c'); return; }
+    if (op.t === 'hr'){ dash(); return; }
+    if (op.t === 'row'){
+      var size = op.big ? big : base;
+      ctx.font = canvasFont(op.big ? '800' : (op.dim ? '400' : '600'), size);
+      var rw = op.r ? ctx.measureText(op.r).width : 0;
+      wrapToWidth(ctx, op.l, inner - rw - 12).forEach(function(t, k){
+        ctx.font = canvasFont(op.dim ? '400' : (op.big ? '800' : '600'), size);
+        ctx.fillStyle = op.dim ? '#333' : '#000';
+        ctx.fillText(t, pad, y);
+        if (k === 0 && op.r){
+          ctx.font = canvasFont('800', size);
+          ctx.fillText(op.r, W - pad - ctx.measureText(op.r).width, y);
+        }
+        y += size + 3;
+      });
+      y += 7;
+    }
+  });
+  y += 6;
+  ctx.save(); ctx.strokeStyle = '#000'; ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(W - pad, y); ctx.stroke(); ctx.restore();
+  return cv;
+}
+function showReceiptImage(cv, name){
+  var url = cv.toDataURL('image/png');
+  var old = document.getElementById('imgModal'); if (old && old.parentNode) old.parentNode.removeChild(old);
+  var d = document.createElement('div');
+  d.id = 'imgModal';
+  d.setAttribute('style', 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:14px');
+  d.innerHTML = '<div style="background:#fff;border-radius:14px;padding:12px;max-width:420px;width:100%;max-height:88vh;overflow:auto">' +
+    '<div style="font-weight:800;font-size:16px;margin-bottom:8px">📤 รูปใบเสร็จ (PNG)</div>' +
+    '<img id="imgModalPic" src="' + url + '" style="width:100%;border:1px solid #ddd;border-radius:8px;display:block">' +
+    '<div style="font-size:13px;color:#555;line-height:1.6;margin:10px 0">• <b>กดค้างที่รูป</b> → <b>บันทึกรูป</b> แล้วเปิด <b>BR RawPrinter</b> → เลือกรูป → พิมพ์<br>• หรือกดปุ่มด้านล่างเพื่อ <b>แชร์</b> เข้าแอพพิมพ์ / ส่งลูกค้าทาง LINE</div>' +
+    '<button class="btn" id="imgShare2">📤 แชร์รูปนี้</button>' +
+    '<a class="btn ghost" id="imgSave2" href="' + url + '" download="' + name + '" style="display:block;text-align:center;text-decoration:none">⬇️ บันทึกไฟล์รูป</a>' +
+    '<button class="btn ghost" id="imgClose">ปิด</button></div>';
+  document.body.appendChild(d);
+  document.getElementById('imgClose').onclick = function(){ if (d.parentNode) d.parentNode.removeChild(d); };
+  document.getElementById('imgShare2').onclick = function(){
+    try {
+      if (navigator.canShare && cv.toBlob){
+        cv.toBlob(function(b){
+          var f = new File([b], name, { type:'image/png' });
+          if (navigator.canShare({ files:[f] })) navigator.share({ files:[f], title:name }).catch(function(){});
+          else toast('ℹ️ กดค้างที่รูป → บันทึกรูป');
+        }, 'image/png');
+      } else toast('ℹ️ กดค้างที่รูป → บันทึกรูป');
+    } catch(e){ toast('ℹ️ กดค้างที่รูป → บันทึกรูป'); }
+  };
+}
+function shareReceiptImage(o){
+  if (!o){ toast('⚠️ ยังไม่มีบิลที่จะแชร์'); return; }
+  var cv;
+  try { cv = receiptCanvas(o); }
+  catch(e){ toast('⚠️ สร้างรูปไม่สำเร็จ: ' + e.message); return; }
+  var name = 'ใบเสร็จ-' + String(o.no || 'bill').replace(/[^0-9A-Za-z\u0E00-\u0E7F#-]/g, '') + '.png';
+  // iOS (รวมโหมดไอคอนหน้าจอโฮม): ส่งไฟล์ผ่าน share sheet → เลือก BR RawPrinter พิมพ์ หรือบันทึกไว้ใน Files
+  if (cv.toBlob && navigator.canShare && typeof navigator.share === 'function'){
+    cv.toBlob(function(blob){
+      var f = null;
+      try { f = new File([blob], name, { type:'image/png' }); } catch(e){ f = null; }
+      if (f && navigator.canShare({ files:[f] })){
+        navigator.share({ files:[f], title:name }).catch(function(err){
+          if (!err || err.name !== 'AbortError') showReceiptImage(cv, name);
+        });
+      } else showReceiptImage(cv, name);
+    }, 'image/png');
+  } else showReceiptImage(cv, name);
+}
 function sampleOrder(){
   var d = Date.now(), items = [
     { name: 'ไหมอุด้ง', unit: 'เมตร', price: 350, qty: 2 },
@@ -2784,6 +2942,8 @@ function sampleOrder(){
 }
 $('btnPrint').onclick = function(){ if (currentOrder) printReceipt(currentOrder); };
 $('btnTestPrint').onclick = function(){ printReceipt(sampleOrder()); };
+$('btnShareImg').onclick = function(){ if (!currentOrder){ toast('⚠️ ยังไม่มีบิล'); return; } shareReceiptImage(currentOrder); };
+$('btnTestShare').onclick = function(){ shareReceiptImage(sampleOrder()); };
 $('paperSel').onchange = function(){ setPaper($('paperSel').value); };
 $('sPaper').onchange = function(){ setPaper($('sPaper').value); };
 $('btnSaveSettings').onclick = function(){

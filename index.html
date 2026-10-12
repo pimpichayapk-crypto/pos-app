@@ -12,6 +12,7 @@
 <script src="vendor/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
 <style id="pageStyle"></style>
+<style id="fontStyle"></style>
 <style>
 :root{
   --primary:#0f766e; --primary2:#0d9488;
@@ -638,6 +639,23 @@ html.shopee .slot .spr{background:rgba(238,77,45,.10)}
           <option value="l6080">สติกเกอร์ 60×80mm — ใบเสร็จย่อ + รายการ</option>
           <option value="l100150">สติกเกอร์ 100×150mm (4×6") — ใบเสร็จเต็ม</option>
         </select></div>
+      <div class="fld"><label>แบบตัวอักษรบนใบเสร็จ</label>
+        <select id="sFont">
+          <option value="system">ระบบ (ค่าเริ่มต้น)</option>
+          <option value="thonburi">ไทยคลาสสิก (Thonburi)</option>
+          <option value="sathu">ไทยตัวโปร่ง (Sathu)</option>
+          <option value="krungthep">ไทยเหลี่ยม (Krungthep)</option>
+          <option value="mono">มอนอสเปซ — ตัวเลข/คอลัมน์ตรงกัน</option>
+        </select>
+      </div>
+      <div class="fld"><label>ขนาดตัวอักษรบนใบเสร็จ</label>
+        <select id="sFSize">
+          <option value="s">เล็ก</option>
+          <option value="m">กลาง (ค่าเริ่มต้น)</option>
+          <option value="l">ใหญ่</option>
+        </select>
+        <div class="hint-note" style="margin-top:6px">มีผลกับทั้ง <b>รูปใบเสร็จ (PNG)</b> และ <b>ใบเสร็จ PDF</b> — ลองเปลี่ยนแล้วกด <b>📤 ทดสอบแชร์รูปใบเสร็จ (ตัวอย่าง)</b> ดู</div>
+      </div>
       <div class="fld"><label>ความหนาตัวอักษรบนใบเสร็จ</label>
         <select id="sInk">
           <option value="thin">บางมาก — เส้นเล็กสุด (อาจดูจาง)</option>
@@ -919,8 +937,10 @@ function localLoad(){
     settings = JSON.parse(localStorage.getItem(LS.s) || '{}');
   } catch(e){ products = []; orders = []; settings = {}; }
   products.forEach(function(p){ if (!p.id) p.id = uid(); });
-  if (!settings.shopName) settings = Object.assign({ shopName: 'ร้านของฉัน', promptpay: '', seller: '', footer: 'ขอบคุณที่อุดหนุนครับ/ค่ะ', warnLow: '1', paper: '58', ink: 'normal' }, settings);
+  if (!settings.shopName) settings = Object.assign({ shopName: 'ร้านของฉัน', promptpay: '', seller: '', footer: 'ขอบคุณที่อุดหนุนครับ/ค่ะ', warnLow: '1', paper: '58', ink: 'normal', font: 'system', fsize: 'm' }, settings);
   if (!settings.ink) settings.ink = 'normal';
+  if (!settings.font) settings.font = 'system';
+  if (!settings.fsize) settings.fsize = 'm';
   if (!settings.paper) settings.paper = '58';
 }
 function localSave(){
@@ -1756,7 +1776,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 59;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 60;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }
@@ -2698,11 +2718,14 @@ function renderPaperSeg(){
   if ($('paperSel') && (!document.activeElement || document.activeElement.id !== 'paperSel')) $('paperSel').value = p;
   if ($('sPaper') && (!document.activeElement || document.activeElement.id !== 'sPaper')) $('sPaper').value = p;
   if ($('sInk') && (!document.activeElement || document.activeElement.id !== 'sInk')) $('sInk').value = settings.ink || 'normal';
+  if ($('sFont') && (!document.activeElement || document.activeElement.id !== 'sFont')) $('sFont').value = RECEIPT_FONTS[settings.font] ? settings.font : 'system';
+  if ($('sFSize') && (!document.activeElement || document.activeElement.id !== 'sFSize')) $('sFSize').value = FONT_SIZES[settings.fsize] ? settings.fsize : 'm';
+  applyFontCSS();
   if ($('btnPrint')) $('btnPrint').textContent = '🖨️ พิมพ์ใบเสร็จ (' + PAPERS[p].label + ')';
 }
 function setPaper(p){
   settings.paper = PAPERS[p] ? p : '58';
-  applyPageSize(); renderPaperSeg();
+  applyPageSize(); applyFontCSS(); renderPaperSeg();
   S.saveSettings({ paper: settings.paper }).catch(function(){});
   toast('🖨️ ตั้งขนาดเป็น ' + PAPERS[settings.paper].label + ' แล้ว');
 }
@@ -2817,7 +2840,7 @@ function receiptOps(o){
   ops.push({ t:'ctr', s: settings.footer || 'ขอบคุณที่อุดหนุนครับ/ค่ะ' });
   return ops;
 }
-function canvasFont(style, size){ return style + ' ' + size + 'px -apple-system,"Helvetica Neue",Helvetica,Arial,"Thonburi",sans-serif'; }
+function canvasFont(style, size){ return style + ' ' + size + 'px ' + receiptFontCSS(); }
 // น้ำหนักตัวอักษรบนใบเสร็จ: ใช้ตัวปกติ (400) ทั้งใบ — เน้นด้วย “ขนาด” แทนตัวหนา
 // (เครื่องพิมพ์ความร้อน + ฟอนต์ไทยมักมีน้ำหนักเดียว → ตัวหนาจะกลายเป็นทึบ/อ่านยาก)
 function receiptWeight(op){ return '400'; }        // เอาตัวหนาออกทั้งหมด — ใช้ “ขนาด” เป็นตัวเน้นแทน
@@ -2828,6 +2851,27 @@ function receiptAmtWeight(op){ return '400'; }
 var INK_LEVELS = { thin: 85, normal: 115, bold: 165 };
 // วัดจริง (รูป 58mm): 70 → เส้นหนา 1 จุด 12% (ดูจาง/ขาด) · 85 → 8.6% · 115 → ~4% (คมสุดที่ยังบาง) · 165 → หนา/ดำ
 function inkThreshold(){ var k = settings.ink; return INK_LEVELS[k] ? INK_LEVELS[k] : INK_LEVELS.normal; }
+// ---- เลือกแบบตัวอักษร + ขนาดตัวอักษรบนใบเสร็จ (ใช้ทั้งรูป PNG และใบเสร็จ PDF) ----
+var RECEIPT_FONTS = {
+  system:   { label: 'ระบบ (ค่าเริ่มต้น)',        css: '-apple-system,"SF Pro Thai","Helvetica Neue",Helvetica,Arial,"Thonburi",sans-serif' },
+  thonburi: { label: 'ไทยคลาสสิก (Thonburi)',     css: '"Thonburi","SF Pro Thai",-apple-system,Helvetica,Arial,sans-serif' },
+  sathu:    { label: 'ไทยตัวโปร่ง (Sathu)',        css: '"Sathu","Thonburi",-apple-system,Helvetica,Arial,sans-serif' },
+  krungthep:{ label: 'ไทยเหลี่ยม (Krungthep)',    css: '"Krungthep","Thonburi",-apple-system,Helvetica,Arial,sans-serif' },
+  mono:     { label: 'มอนอสเปซ — เรียงตรงคอลัมน์', css: '"Courier New",Courier,monospace,"Thonburi"' }
+};
+var FONT_SIZES = { s: { label: 'เล็ก',  scale: 0.85, base: 20 },
+                   m: { label: 'กลาง',  scale: 1,    base: 24 },
+                   l: { label: 'ใหญ่',  scale: 1.15, base: 28 } };
+function receiptFontCSS(){ var k = settings.font; return (RECEIPT_FONTS[k] || RECEIPT_FONTS.system).css; }
+function fontSizeCfg(){ var k = settings.fsize; return FONT_SIZES[k] || FONT_SIZES.m; }
+function receiptBasePx(p){ return Math.round((p === '80' ? 26 : 24) * fontSizeCfg().scale); }
+function applyFontCSS(){
+  var st = $('fontStyle'); if (!st) return;
+  var sc = fontSizeCfg().scale, r = function(v){ return Math.round(v * 100) / 100; };
+  st.textContent = '@media print{ #printArea{font-family:' + receiptFontCSS() + '}'
+    + ' #printArea.p58{font-size:' + r(12 * sc) + 'px}'
+    + ' #printArea.p80{font-size:' + r(13 * sc) + 'px} }';
+}
 function binarizeCanvas(cv){
   var ctx = cv.getContext('2d'), TH = inkThreshold();
   var img = ctx.getImageData(0, 0, cv.width, cv.height), px = img.data;
@@ -2854,7 +2898,7 @@ function wrapToWidth(ctx, text, maxW){
 function receiptCanvas(o){
   var p = curPaper();
   var W = (p === '80') ? 576 : 384;            // 58mm = 384 จุด (203dpi) · 80mm = 576 จุด
-  var pad = 18, base = (p === '80') ? 26 : 24, big = Math.round(base * 1.35), shop = Math.round(base * 1.5);
+  var pad = 18, base = receiptBasePx(p), big = Math.round(base * 1.35), shop = Math.round(base * 1.5);
   var tear = 80;                                // ที่ว่างท้ายไว้ฉีก (A58-pro ไม่มีคัตเตอร์)
   var ops = receiptOps(o);
   var cv = document.createElement('canvas');
@@ -2987,6 +3031,18 @@ $('sInk').onchange = function(){
   S.saveSettings({ ink: settings.ink }).catch(function(){});
   toast('✍️ ความหนาตัวอักษร: ' + ({ thin:'บางมาก', normal:'บาง', bold:'หนา' }[settings.ink] || 'บาง'));
 };
+$('sFont').onchange = function(){
+  settings.font = RECEIPT_FONTS[$('sFont').value] ? $('sFont').value : 'system';
+  S.saveSettings({ font: settings.font }).catch(function(){});
+  applyFontCSS();
+  toast('✍️ แบบตัวอักษร: ' + (RECEIPT_FONTS[settings.font] || {}).label);
+};
+$('sFSize').onchange = function(){
+  settings.fsize = FONT_SIZES[$('sFSize').value] ? $('sFSize').value : 'm';
+  S.saveSettings({ fsize: settings.fsize }).catch(function(){});
+  applyFontCSS();
+  toast('✍️ ขนาดตัวอักษร: ' + (FONT_SIZES[settings.fsize] || {}).label);
+};
 $('btnSaveSettings').onclick = function(){
   var s = {
     shopName: ($('sShop').value || '').trim() || 'ร้านของฉัน',
@@ -2995,7 +3051,9 @@ $('btnSaveSettings').onclick = function(){
     footer: ($('sFoot').value || '').trim(),
     warnLow: $('sWarn').value,
     paper: $('sPaper').value,
-    ink: $('sInk').value
+    ink: $('sInk').value,
+    font: $('sFont').value,
+    fsize: $('sFSize').value
   };
   // ไม่ตรวจเลขพร้อมเพย์แล้ว — ปิดใช้งาน QR พร้อมเพย์
   S.saveSettings(s).then(function(){ toast('💾 บันทึกการตั้งค่าแล้ว'); renderAll(); })

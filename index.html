@@ -437,9 +437,9 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
   #printArea .lbl-big{font-size:1.65em;font-weight:800;text-align:center;margin:2px 0}
   #printArea .lbl-mid{text-align:center}
   #printArea .ctr{text-align:center}
-  #printArea .shop{font-weight:800;font-size:1.35em;line-height:1.3}
+  #printArea .shop{font-weight:400;font-size:1.35em;line-height:1.3}
   #printArea .sub{font-size:.92em}
-  #printArea .big{font-size:1.3em;font-weight:800}
+  #printArea .big{font-size:1.3em;font-weight:400}
   #printArea table{width:100%;border-collapse:collapse}
   #printArea td{padding:1px 0;vertical-align:top}
   #printArea td.r{text-align:right;white-space:nowrap;padding-left:6px}
@@ -1747,7 +1747,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 56;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 57;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }
@@ -2808,6 +2808,10 @@ function receiptOps(o){
   return ops;
 }
 function canvasFont(style, size){ return style + ' ' + size + 'px -apple-system,"Helvetica Neue",Helvetica,Arial,"Thonburi",sans-serif'; }
+// น้ำหนักตัวอักษรบนใบเสร็จ: ใช้ตัวปกติ (400) ทั้งใบ — เน้นด้วย “ขนาด” แทนตัวหนา
+// (เครื่องพิมพ์ความร้อน + ฟอนต์ไทยมักมีน้ำหนักเดียว → ตัวหนาจะกลายเป็นทึบ/อ่านยาก)
+function receiptWeight(op){ return '400'; }        // เอาตัวหนาออกทั้งหมด — ใช้ “ขนาด” เป็นตัวเน้นแทน
+function receiptAmtWeight(op){ return '400'; }
 function wrapToWidth(ctx, text, maxW){
   text = String(text == null ? '' : text);
   if (!text) return [''];
@@ -2837,8 +2841,9 @@ function receiptCanvas(o){
     if (op.t === 'hr'){ y += 16; return; }
     if (op.t === 'row'){
       var size = op.big ? big : base;
-      ctx.font = canvasFont(op.big ? '800' : '600', size);
-      var rw = op.r ? ctx.measureText(op.r).width + 12 : 0;
+      ctx.font = canvasFont(receiptWeight(op), size);
+      var rw = 0;
+      if (op.r){ ctx.font = canvasFont(receiptAmtWeight(op), size); rw = ctx.measureText(op.r).width + 12; }
       y += wrapToWidth(ctx, op.l, inner - rw).length * (size + 3) + 7;
     }
   });
@@ -2862,19 +2867,19 @@ function receiptCanvas(o){
     y += 6;
   }
   ops.forEach(function(op){                     // pass 2: วาด
-    if (op.t === 'shop'){ line(op.s, shop, '800', 'c'); return; }
+    if (op.t === 'shop'){ line(op.s, shop, '400', 'c'); return; }
     if (op.t === 'ctr'){ line(op.s, base, '400', 'c'); return; }
     if (op.t === 'hr'){ dash(); return; }
     if (op.t === 'row'){
       var size = op.big ? big : base;
-      ctx.font = canvasFont(op.big ? '800' : (op.dim ? '400' : '600'), size);
-      var rw = op.r ? ctx.measureText(op.r).width : 0;
+      ctx.font = canvasFont(receiptWeight(op), size);
+      var rw = op.r ? (function(){ ctx.font = canvasFont(receiptAmtWeight(op), size); return ctx.measureText(op.r).width; })() : 0;
       wrapToWidth(ctx, op.l, inner - rw - 12).forEach(function(t, k){
-        ctx.font = canvasFont(op.dim ? '400' : (op.big ? '800' : '600'), size);
+        ctx.font = canvasFont(receiptWeight(op), size);
         ctx.fillStyle = op.dim ? '#333' : '#000';
         ctx.fillText(t, pad, y);
         if (k === 0 && op.r){
-          ctx.font = canvasFont('800', size);
+          ctx.font = canvasFont(receiptAmtWeight(op), size);
           ctx.fillText(op.r, W - pad - ctx.measureText(op.r).width, y);
         }
         y += size + 3;

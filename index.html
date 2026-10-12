@@ -1744,7 +1744,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 52;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 53;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }
@@ -2744,12 +2744,32 @@ function receiptDocHTML(o){
     ((p === '58' || p === '80') ? '<div class="tear"></div>' : '');
   return h;
 }
+function isIOS(){
+  var ua = navigator.userAgent || '';
+  if (/iPad|iPhone|iPod/.test(ua)) return true;
+  return /Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1; // iPadOS 13+ ส่ง UA เป็น Macintosh
+}
+function isAppMode(){ // เปิดจากไอคอนหน้าจอโฮม (standalone) — iOS จะไม่ขึ้นหน้าต่างพิมพ์
+  try {
+    return (window.navigator.standalone === true) ||
+           !!(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+  } catch(e){ return false; }
+}
+function firePrint(){
+  try { window.print(); } catch(e){ toast('⚠️ เปิดหน้าต่างพิมพ์ไม่ได้'); return; }
+  if (isIOS() && isAppMode()) {
+    toast('ℹ️ iPhone: แอพจากหน้าจอโฮมจะไม่ขึ้นหน้าต่างพิมพ์ — เปิดลิงก์ใน Safari แล้วกดพิมพ์อีกครั้ง');
+  }
+}
 function printReceipt(o){
   var p = curPaper();
   $('printArea').className = (PAPERS[p] || PAPERS['58']).cls;
   $('printArea').innerHTML = receiptDocHTML(o);
   applyPageSize();
-  setTimeout(function(){ try { window.print(); } catch(e){ toast('⚠️ เปิดหน้าต่างพิมพ์ไม่ได้'); } }, 80);
+  // iOS Safari ยอมให้ window.print() ทำงานเฉพาะเมื่อเรียกในจังหวะที่ผู้ใช้กดปุ่ม (synchronous)
+  // ถ้าเรียกใน setTimeout หน้าต่างพิมพ์จะไม่ขึ้นเลย — จึงต้องแยกทางบน iOS
+  if (isIOS()) firePrint();
+  else setTimeout(firePrint, 80);
 }
 function sampleOrder(){
   var d = Date.now(), items = [

@@ -638,6 +638,14 @@ html.shopee .slot .spr{background:rgba(238,77,45,.10)}
           <option value="l6080">สติกเกอร์ 60×80mm — ใบเสร็จย่อ + รายการ</option>
           <option value="l100150">สติกเกอร์ 100×150mm (4×6") — ใบเสร็จเต็ม</option>
         </select></div>
+      <div class="fld"><label>ความหนาตัวอักษรบนใบเสร็จ</label>
+        <select id="sInk">
+          <option value="thin">บางมาก (ค่าเริ่มต้น) — เส้นเล็กสุด</option>
+          <option value="normal">บาง (แนะนำ) — ปกติ</option>
+          <option value="bold">หนา/ดำเข้ม — อ่านง่ายในที่แสงน้อย</option>
+        </select>
+        <div class="hint-note" style="margin-top:6px">ใช้กับการพิมพ์เป็น <b>รูปใบเสร็จ (PNG)</b> เป็นหลัก — ถ้าตัวอักษรดูดำ/หนาเกินไป เปลี่ยนเป็น “บางมาก” แล้วพิมพ์ทดสอบใหม่</div>
+      </div>
       <div class="fld"><label>ธีมสีแอพ</label>
         <div class="thbtns" id="thBtns">
           <button class="thbtn" data-th="green">🟢 เขียวร้าน (เดิม)</button>
@@ -911,7 +919,8 @@ function localLoad(){
     settings = JSON.parse(localStorage.getItem(LS.s) || '{}');
   } catch(e){ products = []; orders = []; settings = {}; }
   products.forEach(function(p){ if (!p.id) p.id = uid(); });
-  if (!settings.shopName) settings = Object.assign({ shopName: 'ร้านของฉัน', promptpay: '', seller: '', footer: 'ขอบคุณที่อุดหนุนครับ/ค่ะ', warnLow: '1', paper: '58' }, settings);
+  if (!settings.shopName) settings = Object.assign({ shopName: 'ร้านของฉัน', promptpay: '', seller: '', footer: 'ขอบคุณที่อุดหนุนครับ/ค่ะ', warnLow: '1', paper: '58', ink: 'thin' }, settings);
+  if (!settings.ink) settings.ink = 'thin';
   if (!settings.paper) settings.paper = '58';
 }
 function localSave(){
@@ -1747,7 +1756,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 57;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 58;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }
@@ -2688,6 +2697,7 @@ function renderPaperSeg(){
   var p = curPaper();
   if ($('paperSel') && (!document.activeElement || document.activeElement.id !== 'paperSel')) $('paperSel').value = p;
   if ($('sPaper') && (!document.activeElement || document.activeElement.id !== 'sPaper')) $('sPaper').value = p;
+  if ($('sInk') && (!document.activeElement || document.activeElement.id !== 'sInk')) $('sInk').value = settings.ink || 'thin';
   if ($('btnPrint')) $('btnPrint').textContent = '🖨️ พิมพ์ใบเสร็จ (' + PAPERS[p].label + ')';
 }
 function setPaper(p){
@@ -2812,6 +2822,21 @@ function canvasFont(style, size){ return style + ' ' + size + 'px -apple-system,
 // (เครื่องพิมพ์ความร้อน + ฟอนต์ไทยมักมีน้ำหนักเดียว → ตัวหนาจะกลายเป็นทึบ/อ่านยาก)
 function receiptWeight(op){ return '400'; }        // เอาตัวหนาออกทั้งหมด — ใช้ “ขนาด” เป็นตัวเน้นแทน
 function receiptAmtWeight(op){ return '400'; }
+// ---- ความหนาของเส้นตัวอักษร: เครื่องพิมพ์ความร้อนพิมพ์ได้แค่ ดำ/ขาว ----
+// พิกเซลเทาที่ขอบตัวอักษรจะถูกเครื่องพิมพ์ลายเป็นเม็ดดอท → ตัวอักษรดูหนา/ดำ/ไม่เท่ากัน
+// จึงแปลงรูปเป็นขาว-ดำล้วน (1-bit) และเลือก “ตัดเทา” มาก/น้อยตามระดับที่ตั้งไว้
+var INK_LEVELS = { thin: 70, normal: 100, bold: 165 };
+function inkThreshold(){ var k = settings.ink; return INK_LEVELS[k] ? INK_LEVELS[k] : INK_LEVELS.thin; }
+function binarizeCanvas(cv){
+  var ctx = cv.getContext('2d'), TH = inkThreshold();
+  var img = ctx.getImageData(0, 0, cv.width, cv.height), px = img.data;
+  for (var i = 0; i < px.length; i += 4){
+    var v = (px[i] * 299 + px[i+1] * 587 + px[i+2] * 114) / 1000;
+    var val = (v < TH) ? 0 : 255;
+    px[i] = px[i+1] = px[i+2] = val; px[i+3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+}
 function wrapToWidth(ctx, text, maxW){
   text = String(text == null ? '' : text);
   if (!text) return [''];
@@ -2890,6 +2915,7 @@ function receiptCanvas(o){
   y += 6;
   ctx.save(); ctx.strokeStyle = '#000'; ctx.setLineDash([4, 4]);
   ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(W - pad, y); ctx.stroke(); ctx.restore();
+  binarizeCanvas(cv);        // แปลงเป็นขาว-ดำล้วน ตามระดับความบางที่ตั้งไว้
   return cv;
 }
 function showReceiptImage(cv, name){
@@ -2955,6 +2981,11 @@ $('btnShareImg').onclick = function(){ if (!currentOrder){ toast('⚠️ ยั�
 $('btnTestShare').onclick = function(){ shareReceiptImage(sampleOrder()); };
 $('paperSel').onchange = function(){ setPaper($('paperSel').value); };
 $('sPaper').onchange = function(){ setPaper($('sPaper').value); };
+$('sInk').onchange = function(){
+  settings.ink = INK_LEVELS[$('sInk').value] ? $('sInk').value : 'thin';
+  S.saveSettings({ ink: settings.ink }).catch(function(){});
+  toast('✍️ ความหนาตัวอักษร: ' + ({ thin:'บางมาก', normal:'บาง', bold:'หนา' }[settings.ink] || 'บาง'));
+};
 $('btnSaveSettings').onclick = function(){
   var s = {
     shopName: ($('sShop').value || '').trim() || 'ร้านของฉัน',
@@ -2962,7 +2993,8 @@ $('btnSaveSettings').onclick = function(){
     seller: ($('sSeller').value || '').trim(),
     footer: ($('sFoot').value || '').trim(),
     warnLow: $('sWarn').value,
-    paper: $('sPaper').value
+    paper: $('sPaper').value,
+    ink: $('sInk').value
   };
   // ไม่ตรวจเลขพร้อมเพย์แล้ว — ปิดใช้งาน QR พร้อมเพย์
   S.saveSettings(s).then(function(){ toast('💾 บันทึกการตั้งค่าแล้ว'); renderAll(); })

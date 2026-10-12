@@ -1776,7 +1776,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 60;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 61;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }
@@ -2250,7 +2250,7 @@ function receiptHTML(o){
   var payTxt = o.pay && o.pay.method === 'transfer' ? 'โอน' : 'เงินสด';
   var h = '<div class="receipt"><div class="ctr"><div class="shop">' + esc(settings.shopName || 'ร้านของฉัน') + '</div>' +
     '<div class="meta">ใบเสร็จรับเงิน' + (isVoid ? ' (ยกเลิก)' : '') + '</div>' +
-    '<div class="meta">เลขที่ #' + esc(o.no) + ' · ' + thaiDateTime(toMs(o.at)) + '</div>' +
+    '<div class="meta">' + thaiDateTime(toMs(o.at)) + '</div>' +
     (o.seller ? '<div class="meta">ผู้ขาย: ' + esc(o.seller) + '</div>' : '') + '</div>' +
     (isVoid ? '<div class="void">⚠️ บิลนี้ถูกยกเลิกแล้ว</div>' : '') + '<hr><table>' + rows + '</table><hr>' +
     '<table>' +
@@ -2266,7 +2266,7 @@ function receiptText(o){
   var L = [];
   L.push(settings.shopName || 'ร้านของฉัน');
   L.push('ใบเสร็จรับเงิน' + (o.status === 'void' ? ' (ยกเลิก)' : ''));
-  L.push('เลขที่ #' + o.no + ' · ' + thaiDateTime(toMs(o.at)));
+  L.push(thaiDateTime(toMs(o.at)));
   if (o.seller) L.push('ผู้ขาย: ' + o.seller);
   L.push('------------------------------');
   (o.items||[]).forEach(function(i){ L.push(i.name + (i.optionCode ? ' [' + i.optionCode + ']' : '') + (i.wholesale ? ' (ราคาส่ง)' : '') + ' ' + fmtQty(i.qty) + ' × ' + fmt(i.price) + ' = ' + fmt(itemAmount(i)) + (i.rounded ? ' (ปัดขึ้น)' : '')); });
@@ -2734,7 +2734,7 @@ function labelCompactHTML(o, tiny){
   var qty = (o.items||[]).reduce(function(s,i){ return s + n2(i.qty); }, 0);
   var when = new Date(toMs(o.at)).toLocaleString('th-TH',{timeZone:TZ, day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit'});
   var h = '<div class="ctr"><div class="shop">' + esc(settings.shopName || 'ร้านของฉัน') + '</div>' +
-    '<div class="sub">#' + esc(o.no) + (o.status === 'void' ? ' (ยกเลิก)' : '') + ' · ' + when + '</div></div>';
+    '<div class="sub">' + when + (o.status === 'void' ? ' · (ยกเลิก)' : '') + '</div></div>';
   if (tiny) {
     h += '<div class="sub lbl-mid">' + (o.items||[]).length + ' รายการ · ' + fmtQty(qty) + ' ชิ้น</div>';
   } else {
@@ -2765,7 +2765,6 @@ function receiptDocHTML(o){
   var h = '<div class="ctr">' +
     '<div class="shop">' + esc(settings.shopName || 'ร้านของฉัน') + '</div>' +
     '<div class="sub">' + (isVoid ? '*** ยกเลิกบิล ***' : 'ใบเสร็จรับเงิน') + '</div>' +
-    '<div class="sub">เลขที่ #' + esc(o.no) + '</div>' +
     '<div class="sub">' + thaiDateTime(toMs(o.at)) + '</div>' +
     (o.seller ? '<div class="sub">ผู้ขาย: ' + esc(o.seller) + '</div>' : '') +
     '</div><hr><table>' + rows + '</table><hr><table>' +
@@ -2818,7 +2817,6 @@ function receiptOps(o){
   var ops = [
     { t:'shop', s: settings.shopName || 'ร้านของฉัน' },
     { t:'ctr',  s: isVoid ? '*** ยกเลิกบิล ***' : 'ใบเสร็จรับเงิน' },
-    { t:'ctr',  s: 'เลขที่ #' + (o.no || '') },
     { t:'ctr',  s: thaiDateTime(toMs(o.at)) }
   ];
   if (o.seller) ops.push({ t:'ctr', s: 'ผู้ขาย: ' + o.seller });

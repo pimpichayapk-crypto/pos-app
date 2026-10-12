@@ -427,8 +427,8 @@ body.has-cartbar .saved{bottom:calc(var(--tabbar-h, 64px) + 122px)}
   body>*{display:none !important}
   #printArea{display:block !important;color:#000;background:#fff;margin:0 auto;padding:0;
     font-family:"SF Pro Thai",-apple-system,"PingFang HK",Tahoma,sans-serif;line-height:1.45}
-  #printArea.p58{width:56mm;font-size:10px}
-  #printArea.p80{width:76mm;font-size:11.5px}
+  #printArea.p58{width:56mm;font-size:12px}
+  #printArea.p80{width:76mm;font-size:13px}
   #printArea.pa4{width:176mm;font-size:13px;line-height:1.6}
   #printArea.pl5030{width:48mm;font-size:7.5px;line-height:1.35}
   #printArea.pl6080{width:58mm;font-size:9.5px;line-height:1.4}
@@ -1747,7 +1747,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 54;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 55;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }
@@ -2820,7 +2820,7 @@ function wrapToWidth(ctx, text, maxW){
 function receiptCanvas(o){
   var p = curPaper();
   var W = (p === '80') ? 576 : 384;            // 58mm = 384 จุด (203dpi) · 80mm = 576 จุด
-  var pad = 16, base = (p === '80') ? 17 : 16, big = Math.round(base * 1.35), shop = Math.round(base * 1.5);
+  var pad = 18, base = (p === '80') ? 26 : 24, big = Math.round(base * 1.35), shop = Math.round(base * 1.5);
   var tear = 80;                                // ที่ว่างท้ายไว้ฉีก (A58-pro ไม่มีคัตเตอร์)
   var ops = receiptOps(o);
   var cv = document.createElement('canvas');

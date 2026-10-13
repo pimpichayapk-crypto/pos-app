@@ -626,6 +626,7 @@ html.shopee .slot .spr{background:rgba(238,77,45,.10)}
     <div class="card">
       <div class="sect" style="margin-top:0">ข้อมูลร้าน</div>
       <div class="fld"><label>ชื่อร้าน (แสดงบนใบเสร็จ)</label><input id="sShop" placeholder="เช่น ร้านไหมปิม"></div>
+      <div class="fld"><label>เบอร์โทรร้าน (ไม่ใส่ก็ได้)</label><input id="sPhone" placeholder="เช่น 081-234-5678" inputmode="tel"></div>
       <input id="sPP" type="hidden" value="">
       <div class="hint-note">💵📱 <b>วิธีรับเงิน</b> — หน้าชำระเงินมีปุ่มให้เลือก <b>เงินสด</b> หรือ <b>โอน</b> ทุกบิล ระบบบันทึกวิธีจ่ายไว้กับบิลนั้น และแยกยอด เงินสด/โอน ให้ในหน้า 📊 สรุป (ไม่ต้องใส่เลขพร้อมเพย์/ไม่ใช้ QR แล้ว)</div>
       <div class="fld"><label>ชื่อผู้ขาย (ไม่ใส่ก็ได้)</label><input id="sSeller" placeholder="เช่น ปิม"></div>
@@ -941,6 +942,7 @@ function localLoad(){
   if (!settings.ink) settings.ink = 'normal';
   if (!settings.font) settings.font = 'system';
   if (!settings.fsize) settings.fsize = 'm';
+  if (settings.phone == null) settings.phone = '';
   if (!settings.paper) settings.paper = '58';
 }
 function localSave(){
@@ -1776,7 +1778,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 61;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 62;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }
@@ -2249,6 +2251,7 @@ function receiptHTML(o){
   }).join('');
   var payTxt = o.pay && o.pay.method === 'transfer' ? 'โอน' : 'เงินสด';
   var h = '<div class="receipt"><div class="ctr"><div class="shop">' + esc(settings.shopName || 'ร้านของฉัน') + '</div>' +
+    (settings.phone ? '<div class="meta">โทร. ' + esc(settings.phone) + '</div>' : '') +
     '<div class="meta">ใบเสร็จรับเงิน' + (isVoid ? ' (ยกเลิก)' : '') + '</div>' +
     '<div class="meta">' + thaiDateTime(toMs(o.at)) + '</div>' +
     (o.seller ? '<div class="meta">ผู้ขาย: ' + esc(o.seller) + '</div>' : '') + '</div>' +
@@ -2265,6 +2268,7 @@ function receiptHTML(o){
 function receiptText(o){
   var L = [];
   L.push(settings.shopName || 'ร้านของฉัน');
+  if (settings.phone) L.push('โทร. ' + settings.phone);
   L.push('ใบเสร็จรับเงิน' + (o.status === 'void' ? ' (ยกเลิก)' : ''));
   L.push(thaiDateTime(toMs(o.at)));
   if (o.seller) L.push('ผู้ขาย: ' + o.seller);
@@ -2560,6 +2564,7 @@ function renderSettings(){
   var f = document.activeElement;
   function setIf(id, v){ if (f && f.id === id) return; $(id).value = v == null ? '' : v; }
   setIf('sShop', settings.shopName || '');
+  setIf('sPhone', settings.phone || '');
   setIf('sPP', settings.promptpay || '');
   setIf('sSeller', settings.seller || '');
   setIf('sFoot', settings.footer || '');
@@ -2734,6 +2739,7 @@ function labelCompactHTML(o, tiny){
   var qty = (o.items||[]).reduce(function(s,i){ return s + n2(i.qty); }, 0);
   var when = new Date(toMs(o.at)).toLocaleString('th-TH',{timeZone:TZ, day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit'});
   var h = '<div class="ctr"><div class="shop">' + esc(settings.shopName || 'ร้านของฉัน') + '</div>' +
+    ((!tiny && settings.phone) ? '<div class="sub">โทร. ' + esc(settings.phone) + '</div>' : '') +
     '<div class="sub">' + when + (o.status === 'void' ? ' · (ยกเลิก)' : '') + '</div></div>';
   if (tiny) {
     h += '<div class="sub lbl-mid">' + (o.items||[]).length + ' รายการ · ' + fmtQty(qty) + ' ชิ้น</div>';
@@ -2764,6 +2770,7 @@ function receiptDocHTML(o){
   var payTxt = (o.pay && o.pay.method === 'transfer') ? 'โอน' : 'เงินสด';
   var h = '<div class="ctr">' +
     '<div class="shop">' + esc(settings.shopName || 'ร้านของฉัน') + '</div>' +
+    (settings.phone ? '<div class="sub">โทร. ' + esc(settings.phone) + '</div>' : '') +
     '<div class="sub">' + (isVoid ? '*** ยกเลิกบิล ***' : 'ใบเสร็จรับเงิน') + '</div>' +
     '<div class="sub">' + thaiDateTime(toMs(o.at)) + '</div>' +
     (o.seller ? '<div class="sub">ผู้ขาย: ' + esc(o.seller) + '</div>' : '') +
@@ -2815,10 +2822,11 @@ function receiptOps(o){
   var isVoid = o.status === 'void';
   var payTxt = (o.pay && o.pay.method === 'transfer') ? 'โอน' : 'เงินสด';
   var ops = [
-    { t:'shop', s: settings.shopName || 'ร้านของฉัน' },
-    { t:'ctr',  s: isVoid ? '*** ยกเลิกบิล ***' : 'ใบเสร็จรับเงิน' },
-    { t:'ctr',  s: thaiDateTime(toMs(o.at)) }
+    { t:'shop', s: settings.shopName || 'ร้านของฉัน' }
   ];
+  if (settings.phone) ops.push({ t:'ctr', s: 'โทร. ' + settings.phone });
+  ops.push({ t:'ctr',  s: isVoid ? '*** ยกเลิกบิล ***' : 'ใบเสร็จรับเงิน' });
+  ops.push({ t:'ctr',  s: thaiDateTime(toMs(o.at)) });
   if (o.seller) ops.push({ t:'ctr', s: 'ผู้ขาย: ' + o.seller });
   ops.push({ t:'hr' });
   (o.items || []).forEach(function(i){
@@ -3044,6 +3052,7 @@ $('sFSize').onchange = function(){
 $('btnSaveSettings').onclick = function(){
   var s = {
     shopName: ($('sShop').value || '').trim() || 'ร้านของฉัน',
+    phone: ($('sPhone').value || '').trim(),
     promptpay: ($('sPP').value || '').replace(/[^0-9]/g, ''),
     seller: ($('sSeller').value || '').trim(),
     footer: ($('sFoot').value || '').trim(),

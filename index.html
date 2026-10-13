@@ -1778,7 +1778,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 63;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 64;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }
@@ -2253,7 +2253,8 @@ function receiptHTML(o){
   var h = '<div class="receipt"><div class="ctr"><div class="shop">' + esc(settings.shopName || 'ร้านของฉัน') + '</div>' +
     (settings.phone ? '<div class="meta">โทร. ' + esc(settings.phone) + '</div>' : '') +
     '<div class="meta">' + thaiDateTime(toMs(o.at)) + '</div>' +
-    (o.seller ? '<div class="meta">ผู้ขาย: ' + esc(o.seller) + '</div>' : '') + '</div>' +
+    (o.seller ? '<div class="meta">ผู้ขาย: ' + esc(o.seller) + '</div>' : '') +
+    '<div class="meta">ใบเสร็จรับเงิน' + (isVoid ? ' (ยกเลิก)' : '') + '</div></div>' +
     (isVoid ? '<div class="void">⚠️ บิลนี้ถูกยกเลิกแล้ว</div>' : '') + '<hr><table>' + rows + '</table><hr>' +
     '<table>' +
     '<tr><td>รวม</td><td class="r">' + fmt(o.subtotal) + '</td></tr>' +
@@ -2261,8 +2262,7 @@ function receiptHTML(o){
     '<tr><td class="sum">ยอดสุทธิ</td><td class="r sum">' + fmt(o.total) + '</td></tr>' +
     '<tr><td>ชำระโดย</td><td class="r">' + payTxt + '</td></tr>' +
     (o.pay && o.pay.method === 'cash' ? '<tr><td>รับเงิน</td><td class="r">' + fmt(o.pay.received) + '</td></tr><tr><td>เงินทอน</td><td class="r">' + fmt(o.pay.change) + '</td></tr>' : '') +
-    '</table><hr><div class="ctr meta">' + esc(settings.footer || 'ขอบคุณที่อุดหนุนครับ/ค่ะ') + '</div>' +
-    '<div class="ctr meta" style="margin-top:4px">ใบเสร็จรับเงิน' + (isVoid ? ' (ยกเลิก)' : '') + '</div></div>';
+    '</table><hr><div class="ctr meta">' + esc(settings.footer || 'ขอบคุณที่อุดหนุนครับ/ค่ะ') + '</div></div>';
   return h;
 }
 function receiptText(o){
@@ -2271,6 +2271,7 @@ function receiptText(o){
   if (settings.phone) L.push('โทร. ' + settings.phone);
   L.push(thaiDateTime(toMs(o.at)));
   if (o.seller) L.push('ผู้ขาย: ' + o.seller);
+  L.push('ใบเสร็จรับเงิน' + (o.status === 'void' ? ' (ยกเลิก)' : ''));
   L.push('------------------------------');
   (o.items||[]).forEach(function(i){ L.push(i.name + (i.optionCode ? ' [' + i.optionCode + ']' : '') + (i.wholesale ? ' (ราคาส่ง)' : '') + ' ' + fmtQty(i.qty) + ' × ' + fmt(i.price) + ' = ' + fmt(itemAmount(i)) + (i.rounded ? ' (ปัดขึ้น)' : '')); });
   L.push('------------------------------');
@@ -2280,7 +2281,6 @@ function receiptText(o){
   L.push('ชำระโดย ' + (o.pay && o.pay.method === 'transfer' ? 'โอน' : 'เงินสด'));
   if (o.pay && o.pay.method === 'cash') L.push('รับ ' + fmt(o.pay.received) + ' ทอน ' + fmt(o.pay.change));
   L.push(settings.footer || 'ขอบคุณที่อุดหนุนครับ/ค่ะ');
-  L.push('ใบเสร็จรับเงิน' + (o.status === 'void' ? ' (ยกเลิก)' : ''));
   return L.join('\n');
 }
 function showOrder(o, justSaved){
@@ -2774,6 +2774,7 @@ function receiptDocHTML(o){
     (isVoid ? '<div class="sub">*** ยกเลิกบิล ***</div>' : '') +
     '<div class="sub">' + thaiDateTime(toMs(o.at)) + '</div>' +
     (o.seller ? '<div class="sub">ผู้ขาย: ' + esc(o.seller) + '</div>' : '') +
+    '<div class="sub">ใบเสร็จรับเงิน' + (isVoid ? ' (ยกเลิก)' : '') + '</div>' +
     '</div><hr><table>' + rows + '</table><hr><table>' +
     '<tr><td>รวม</td><td class="r">' + fmt(o.subtotal) + '</td></tr>' +
     (n2(o.discount) ? '<tr><td>ส่วนลด</td><td class="r">-' + fmt(o.discount) + '</td></tr>' : '') +
@@ -2783,7 +2784,6 @@ function receiptDocHTML(o){
       ? '<tr><td>รับเงิน</td><td class="r">' + fmt(o.pay.received) + '</td></tr><tr><td>เงินทอน</td><td class="r">' + fmt(o.pay.change) + '</td></tr>'
       : '') +
     '</table><hr><div class="ctr sub">' + esc(settings.footer || 'ขอบคุณที่อุดหนุนครับ/ค่ะ') + '</div>' +
-    '<div class="ctr sub">ใบเสร็จรับเงิน' + (isVoid ? ' (ยกเลิก)' : '') + '</div>' +
     ((p === '58' || p === '80') ? '<div class="tear"></div>' : '');
   return h;
 }
@@ -2829,6 +2829,7 @@ function receiptOps(o){
   if (isVoid) ops.push({ t:'ctr', s: '*** ยกเลิกบิล ***' });
   ops.push({ t:'ctr',  s: thaiDateTime(toMs(o.at)) });
   if (o.seller) ops.push({ t:'ctr', s: 'ผู้ขาย: ' + o.seller });
+  ops.push({ t:'ctr', s: 'ใบเสร็จรับเงิน' + (isVoid ? ' (ยกเลิก)' : '') });
   ops.push({ t:'hr' });
   (o.items || []).forEach(function(i){
     ops.push({ t:'row', l: i.name + (i.optionCode ? ' [' + i.optionCode + ']' : '') + (i.wholesale ? ' (ราคาส่ง)' : ''), r: fmt(itemAmount(i)) });
@@ -2845,7 +2846,6 @@ function receiptOps(o){
   }
   ops.push({ t:'hr' });
   ops.push({ t:'ctr', s: settings.footer || 'ขอบคุณที่อุดหนุนครับ/ค่ะ' });
-  ops.push({ t:'ctr', s: 'ใบเสร็จรับเงิน' + (isVoid ? ' (ยกเลิก)' : '') });
   return ops;
 }
 function canvasFont(style, size){ return style + ' ' + size + 'px ' + receiptFontCSS(); }

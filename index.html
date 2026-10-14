@@ -560,9 +560,9 @@ html.shopee .slot .spr{background:rgba(238,77,45,.10)}
     <div class="chips" id="scats"></div>
     <div class="sortrow">
       <select id="ssort">
+        <option value="price">เรียง: ราคาน้อย→มาก</option>
         <option value="name">เรียง: ชื่อ ก→ฮ</option>
         <option value="stock">เรียง: สต็อกน้อย→มาก</option>
-        <option value="price">เรียง: ราคามาก→น้อย</option>
         <option value="value">เรียง: มูลค่าสต็อกมาก→น้อย</option>
       </select>
       <label><input type="checkbox" id="slowOnly"> เฉพาะใกล้หมด/หมด</label>
@@ -1122,10 +1122,15 @@ function natCmp(a, b){
 // เทียบ "ชื่อหลัก" ก่อน (ตัดวงเล็บตัวเลือกออก) เพื่อให้ ยางยืดกลม(เล็ก) ไปอยู่ล่างสุดหลัง ยางยืด(ขาว)/(ดำ)
 function natBase(s){ return natKey(s).replace(/\([^)]*\)/g, ' ').replace(/\s+/g, '').trim(); }
 function byNameNat(a, b){
-  var an = a && a.name, bn = b && b.name;
+  var an = a.name || '', bn = b.name || '';
   var c = natCmp(natBase(an), natBase(bn));
   if (c) return c;
   return natCmp(an, bn);
+}
+// เรียงตามราคา (ถูก → แพง) แล้วค่อยเรียงตามชื่อ — เจ้าของร้านสั่ง “สินค้าทุกชนิดให้เรียงตามราคา”
+function byPriceNat(a, b){
+  var d = n2(a.price) - n2(b.price);
+  return d ? d : byNameNat(a, b);
 }
 function catNameOf(p){ var c = String(p.category || '').trim(); return c || 'ไม่ระบุหมวด'; }
 function catList(){
@@ -1232,7 +1237,7 @@ function filteredProducts(){
     if (!q) return true;
     if (isWholesaleQuery(q) && n2(p.wholesalePrice) > 0) return true;
     return String(p.name || '').toLowerCase().indexOf(q) >= 0 || String(p.category || '').toLowerCase().indexOf(q) >= 0 || optMatch(p, q);
-  }).sort(byNameNat);                                               // เรียงเลขจากน้อยไปมาก (#4 → #6 → #10, ¾" → 1" → 2")
+  }).sort(byPriceNat);                                              // เรียงตามราคา ถูก → แพง (เจ้าของร้านสั่งไว้)
 }
 function stockClass(p){
   var s = n2(p.stock), low = p.lowStock == null ? 5 : n2(p.lowStock);
@@ -1440,13 +1445,10 @@ function closeCatPick(){ openSheet('Pick2', false); }
 function pkSel(){ return pkPick ? products.find(function(x){ return x.id === pkPick; }) : null; }
 function renderCatPick(){
   if (!$('pkBody') || !pickCat) return;
-  var all = sheetProducts(pickCat).slice().sort(byNameNat);
+  var all = sheetProducts(pickCat).slice().sort(byPriceNat);
   if (pickExcl.length) all = all.filter(function(p){ return !pickExcl.some(function(t){ return subMatch(p, t); }); });
-  var ord = sheetOrderOf(pickCat);                      // ลำดับที่เจ้าของร้านกำหนดเอง (ถ้ามี)
-  if (ord.length) all = all.slice().sort(function(a, b){
-    var ka = sheetOrderIdx(a.name, ord), kb = sheetOrderIdx(b.name, ord);
-    return ka !== kb ? ka - kb : byNameNat(a, b);
-  });
+  // เจ้าของร้านสั่ง “สินค้าทุกชนิดให้เรียงตามราคา” ⇒ ชีตทุกหมวดเรียงราคาถูก→แพง
+  // (ลำดับที่เคยตั้งเองใน settings.sheetOrder ไม่ถูกใช้แล้ว — ถ้าจะกลับไปใช้ บอกได้)
   var list = pickGroup ? all.filter(function(p){ return subMatch(p, pickGroup); }) : all;
   $('pkTitle').textContent = catIcon(pickCat) + ' ' + pickCat + (pickGroup ? ' · ' + pickGroup : '') + ' · ' + list.length + ' รายการ';
   // รวมเป็นรายการเดียว ไม่แบ่งกลุ่มย่อย (ตามที่เจ้าของร้านสั่ง)
@@ -1777,8 +1779,8 @@ function checkout(){
 }
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
-var sCat = 'all', sSort = 'name', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 64;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var sCat = 'all', sSort = 'price', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
+var BUILD = 65;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }
@@ -1818,7 +1820,7 @@ function sortedStock(){
   });
   list.sort(function(a,b){
     if (sSort === 'stock') return n2(a.stock) - n2(b.stock);
-    if (sSort === 'price') return n2(b.price) - n2(a.price);
+    if (sSort === 'price') return n2(a.price) - n2(b.price);        // ราคา น้อย → มาก (ตามที่เจ้าของร้านสั่ง)
     if (sSort === 'value') return (n2(b.stock) * n2(b.price)) - (n2(a.stock) * n2(a.price));
     return byNameNat(a, b);
   });
@@ -1826,6 +1828,7 @@ function sortedStock(){
 }
 function renderStock(){
   if (!$('slist')) return;
+  syncSortSelect();                                             // dropdown โชว์ค่าที่ใช้จริง (ค่าเริ่มต้น = ราคาน้อย→มาก)
   renderStockStats(); renderStockCats();
   var list = sortedStock();
   $('sempty').style.display = list.length ? 'none' : 'block';
@@ -1864,7 +1867,7 @@ function renderStockSheet(){
 // ---------- สินค้าราคาส่ง ----------
 function wholesaleProducts(){
   return products.filter(function(p){ return n2(p.wholesalePrice) > 0; })
-    .sort(byNameNat);
+    .sort(byPriceNat);
 }
 function wsDiscount(p){
   var r = n2(p.price), w = n2(p.wholesalePrice);
@@ -2150,6 +2153,8 @@ $('fImg').onchange = function(e){
 // ---------- events ของหน้าสินค้า ----------
 $('sq').oninput = function(){ renderStock(); };
 $('ssort').onchange = function(){ sSort = $('ssort').value; renderStock(); };
+// ให้ dropdown ตรงกับค่าที่ใช้จริงเสมอ (ค่าเริ่มต้น = เรียงตามราคา)
+function syncSortSelect(){ if ($('ssort') && $('ssort').value !== sSort) $('ssort').value = sSort; }
 $('slowOnly').onchange = function(){ sLowOnly = $('slowOnly').checked; renderStock(); };
 $('btnAddProduct').onclick = function(){ openProductForm(null); };
 $('btnAddFromSell').onclick = function(){ openProductForm(null); };

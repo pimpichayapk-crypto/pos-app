@@ -890,7 +890,12 @@ var LS = { p: 'pos_products', o: 'pos_orders', s: 'pos_settings', m: 'pos_months
 // ---------- utils ----------
 function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function n2(v){ var x = parseFloat(v); if (isNaN(x)) x = 0; return Math.round(x*100)/100; }
-function fmt(v){ return n2(v).toLocaleString('th-TH',{minimumFractionDigits:2, maximumFractionDigits:2}); }
+// ราคาของร้านเป็นจำนวนเต็มบาทอยู่แล้ว ⇒ ไม่ต้องโชว์ .00 (ถ้ามีเศษสตางค์จริงจึงค่อยโชว์ทศนิยม 2 ตำแหน่ง)
+function fmt(v){
+  var x = n2(v), whole = Math.abs(x - Math.round(x)) < 0.005;
+  return x.toLocaleString('th-TH', whole ? {minimumFractionDigits:0, maximumFractionDigits:0}
+                                         : {minimumFractionDigits:2, maximumFractionDigits:2});
+}
 function fmtQty(v){ var x = parseFloat(v)||0; return (x % 1 === 0) ? String(x) : String(x); }
 function toast(msg){ var el = $('toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(el._t); el._t = setTimeout(function(){ el.classList.remove('show'); }, 2400); }
 function dayKeyOf(ms){
@@ -1872,7 +1877,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'price', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 66;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 67;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }

@@ -1506,20 +1506,34 @@ function renderCatPick(){
           '<div style="font-size:12.5px;font-weight:800;margin-top:5px">' + esc(p.name) + '</div>' +
         '</div></div>'
     : '<div class="pkhead" style="display:block;color:var(--muted);font-weight:700">👆 แตะสินค้าด้านล่างเพื่อเลือก</div>';
-  var qtyHtml = p ? '<div class="pdsec"><div class="pdsec-h"><span>จำนวน</span><span class="sel">' +
-      (q > 0 ? 'ในตะกร้า ' + fmtQty(q) + ' ' + esc(p.unit || 'ชิ้น') + ' · ยอด ' + money(lineAmount(ep.price, q)) : '') + '</span></div>' +
+  var qtyHtml = p ? '<div class="pdsec" style="border:2px solid #99f6e4;background:#f0fdfa;border-radius:14px;padding:11px 12px 10px">' +
+      '<div class="pdsec-h"><span>🔢 ใส่จำนวนที่ต้องการ</span><span class="sel">' +
+      (q > 0 ? 'ในตะกร้า ' + fmtQty(q) + ' ' + esc(p.unit || 'ชิ้น') + ' · ยอด ' + money(lineAmount(ep.price, q)) : 'พิมพ์ตัวเลข หรือกดปุ่มด้านล่าง') + '</span></div>' +
       '<div class="pdq" style="margin-top:9px"><button class="qbtn minus" data-act="minus">−</button>' +
       '<input class="qin" inputmode="decimal" value="' + fmtQty(q) + '" aria-label="จำนวน">' +
-      '<button class="qbtn plus" data-act="plus">+</button></div>' +
+      '<button class="qbtn plus" data-act="plus">+</button>' +
+      '<span style="font-size:13px;font-weight:800;color:var(--muted);margin-left:9px">' + uTxt + '</span></div>' +
+      '<div class="quick" style="margin-top:9px">' + [1, 2, 3, 5, 10, 12, 20, 50].map(function(v){ return '<button data-q="' + v + '">' + v + '</button>'; }).join('') + '</div>' +
       (q > 0 && ep.wholesale ? '<div class="hint-note" style="margin-top:6px">✅ ใช้ราคาส่ง ' + money(ep.price) + ' (ครบขั้นต่ำแล้ว)</div>' : '') +
       (q > 0 && isRounded(ep.price, q) ? '<div class="hint-note" style="margin-top:4px">💰 ปัดเศษขึ้นจาก ' + fmt(n2(ep.price) * q) + ' เป็นจำนวนเต็มบาท</div>' : '') +
+      '<div class="hint-note" style="margin-top:6px">กดตัวเลข = ใส่จำนวนลงตะกร้าทันที · <b>ไม่ต้องไปแก้จำนวนในตะกร้าอีก</b></div>' +
       '</div>' : '';
-  $('pkBody').innerHTML = selHtml + html + qtyHtml;
+  $('pkBody').innerHTML = selHtml + (p ? qtyHtml : '') + html;
+  // ปุ่มจำนวนเร็ว + ช่องจำนวน ในชีต = ลงตะกร้าทันที (สินค้าราคาเปิดที่ยังไม่ใส่ราคา → เปิดชีตใส่ราคาให้ก่อน)
+  function setFromSheet(v){
+    v = n2(v);
+    if (v > 0 && isOpenPrice(p) && n2(cartPrice[key]) <= 0) { openPriceSheet(key, 'add', v); return; }
+    setQty(key, v);
+  }
+  Array.prototype.forEach.call($('pkBody').querySelectorAll('[data-q]'), function(b){
+    b.onclick = function(){ setFromSheet(n2(b.getAttribute('data-q'))); };
+  });
   var btn = $('btnPkAdd');
-  if (!p) btn.textContent = '🛒 เพิ่มไปยังตะกร้า';
+  if (!p) btn.textContent = '👆 เลือกสินค้าด้านล่างก่อน';
   else if (hasOptions(p)) btn.textContent = '🎨 เลือกรหัส / สี ›';
   else if (q > 0) btn.textContent = '✅ เสร็จแล้ว (ในตะกร้า ' + fmtQty(q) + ' ' + (p.unit || 'ชิ้น') + ')';
-  else btn.textContent = '🛒 เพิ่มไปยังตะกร้า · ' + money(ep.price);
+  else if (isOpenPrice(p)) btn.textContent = '💰 ใส่ราคา / จำนวน';
+  else btn.textContent = '🛒 เพิ่ม 1 ' + (p.unit || 'ชิ้น') + ' · ' + money(ep.price);
   btn.onclick = function(){
     if (!p) { toast('⚠️ เลือกสินค้าก่อนครับ'); return; }
     if (hasOptions(p)) { closeCatPick(); openProd(p.id); return; }
@@ -1538,11 +1552,11 @@ function renderCatPick(){
     b.onclick = function(){ pkPick = b.getAttribute('data-id'); renderCatPick(); };
   });
   var mn = $('pkBody').querySelector('[data-act="minus"]'), pl = $('pkBody').querySelector('[data-act="plus"]'), qi = $('pkBody').querySelector('.qin');
-  if (mn) mn.onclick = function(){ setQty(key, n2(cart[key]) - 1); };
-  if (pl) pl.onclick = function(){ addToCart(p.id); };
+  if (mn) mn.onclick = function(){ var v = n2(cart[key]) - 1; if (v > 0) setFromSheet(v); else setQty(key, v); };
+  if (pl) pl.onclick = function(){ setFromSheet(n2(cart[key]) + 1); };
   if (qi) {
     qi.onfocus = function(){ qi.select(); };
-    qi.onchange = function(){ setQty(key, parseQty(qi.value)); };
+    qi.onchange = function(){ setFromSheet(parseQty(qi.value)); };
     qi.onkeydown = function(ev){ if (ev.key === 'Enter') { ev.preventDefault(); qi.blur(); } };
   }
 }
@@ -1770,7 +1784,7 @@ function renderQr(t){
 
 // ---------- ราคาเปิด: ใส่ราคาตอนขายเอง ----------
 var prKey = null, prMode = 'add', prProdId = null;
-function openPriceSheet(key, mode){
+function openPriceSheet(key, mode, qtyWanted){
   var s = splitKey(key), p = products.find(function(x){ return x.id === s.id; });
   if (!p) return;
   prKey = key; prMode = mode || 'add'; prProdId = p.id;
@@ -1781,7 +1795,7 @@ function openPriceSheet(key, mode){
   var cur = n2(cartPrice[key]);
   $('prPrice').value = cur > 0 ? fmtQty(cur) : (n2(p.price) > 0 ? fmtQty(n2(p.price)) : '');
   $('prQtyWrap').style.display = prMode === 'add' ? 'block' : 'none';
-  $('prQty').value = prMode === 'add' ? fmtQty(n2(cart[key]) + 1) : fmtQty(n2(cart[key]) || 1);
+  $('prQty').value = prMode === 'add' ? fmtQty(n2(qtyWanted) > 0 ? n2(qtyWanted) : (n2(cart[key]) + 1)) : fmtQty(n2(cart[key]) || 1);
   $('prQuick').innerHTML = [1, 5, 10, 50, 100].map(function(v){ return '<button data-p="' + v + '">+' + v + '</button>'; }).join('') +
     '<button data-p="0">ล้าง</button>';
   Array.prototype.forEach.call($('prQuick').querySelectorAll('button'), function(b){
@@ -1877,7 +1891,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'price', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 67;                        // เลขเวอร์ชันแอพ (อัปเดตทุกครั้งที่แก้)
+var BUILD = 68;                        // เลขเวอร์ชันแอป (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }

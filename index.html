@@ -587,6 +587,7 @@ html.shopee .slot .spr{background:rgba(238,77,45,.10)}
     </div>
     <div class="hint-note">🏷️ <b>ยกแพ็ค</b> — รวมสินค้าที่ตั้ง <b>ราคายกแพ็ค / ราคาส่ง</b> ไว้ที่นี่ทั้งหมด ไม่ต้องค้นหาให้ยุ่งยาก · กด <b>🛒 ใส่ยกแพ็ค</b> เพื่อใส่ลงตะกร้าด้วยราคายกแพ็ค · กด <b>✏️ แก้ราคา</b> เพื่อแก้ราคา</div>
     <div class="empty" id="wnone" style="display:none">ไม่พบสินค้าตามคำค้น</div>
+    <div id="wcats"></div>
     <div id="wlist"></div>
     <div class="empty" id="wempty" style="display:none">ยังไม่มีสินค้ายกแพ็ค (ที่ตั้งราคาส่ง)<br><span style="font-size:12px;color:var(--muted)">ไปที่แท็บ 📦 สินค้า → แตะสินค้า → ใส่ช่อง “ราคาส่ง/หน่วย”</span><br><button class="chip" id="btnAddFromWs" style="padding:9px 14px;margin-top:10px">➕ เพิ่มสินค้าใหม่</button></div>
   </section>
@@ -781,6 +782,13 @@ html.shopee .slot .spr{background:rgba(238,77,45,.10)}
   <button class="btn" id="btnPdAdd">＋ ใส่ตะกร้า</button>
 </div>
 
+
+<div class="ov" id="ovWs"></div>
+<div class="sheet" id="sheetWs">
+  <h2><span id="wsTitleTxt">🏷️ ยกแพ็ค</span> <button class="x" id="xWs">✕</button></h2>
+  <div id="wsBody"></div>
+  <button class="btn ghost" id="btnWsClose">ปิด</button>
+</div>
 
 <div class="ov" id="ovPrice"></div>
 <div class="sheet" id="sheetPrice">
@@ -1788,7 +1796,7 @@ function updateCartBar(){
 function setQty(key, q){
   q = n2(q);
   if (q <= 0) { delete cart[key]; delete cartPrice[key]; } else cart[key] = q;
-  renderProducts(); renderWholesale(); renderCart(); renderProdSheet(); if (pickCat) renderCatPick(); updateCartBar();
+  renderProducts(); renderWholesale(); renderCart(); renderProdSheet(); if (pickCat) renderCatPick(); updateCartBar(); refreshWsSheet();
 }
 function renderQr(t){
   // ปิดใช้งาน QR พร้อมเพย์แล้ว (ร้านเลือกบันทึกเป็น “โอน” เฉย ๆ ไม่ต้องมี QR)
@@ -1904,8 +1912,8 @@ function checkout(){
 }
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
-var sCat = 'all', sSort = 'price', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null;
-var BUILD = 70;                        // เลขเวอร์ชันแอป (อัปเดตทุกครั้งที่แก้)
+var sCat = 'all', sSort = 'price', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null, wsCurCat = '';
+var BUILD = 71;                        // เลขเวอร์ชันแอป (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }
@@ -2032,7 +2040,9 @@ function renderWholesale(){
     '<div class="stat"><div class="v blue">' + inCart.length + '</div><div class="l">ในตะกร้าแล้ว</div></div>';
   $('wempty').style.display = all.length ? 'none' : 'block';
   $('wnone').style.display = (all.length && !list.length) ? 'block' : 'none';
-  $('wlist').innerHTML = list.map(function(p){
+  renderWsBody(list);
+}
+function wsCardsHtml(list){ return list.map(function(p){
     var sc = stockClass(p), unit = esc(p.unit || 'ชิ้น'), min = wholesaleMinOf(p);
     var pack = isPack(p), key = pack ? packKey(p.id) : p.id;
     var q = n2(cart[key]), ep = pack ? { price: n2(p.packPrice), wholesale: true, min: 1 } : effectivePrice(p, cartQtyOfProduct(p.id));
@@ -2064,8 +2074,9 @@ function renderWholesale(){
         '<button class="wsbtn" data-act="addpack">🛒 ใส่ยกแพ็ค</button>' +
         '<button class="wsbtn ghost" data-act="edit">✏️ แก้ราคา</button>' +
       '</div></div>';
-  }).join('');
-  Array.prototype.forEach.call($('wlist').querySelectorAll('.wcard'), function(card){
+  }).join(''); }
+function wireWsCards(root){
+  Array.prototype.forEach.call(root.querySelectorAll('.wcard'), function(card){
     var id = card.getAttribute('data-id');
     var p0 = products.find(function(x){ return x.id === id; });
     var pack = isPack(p0), key = pack ? packKey(id) : id;
@@ -2095,6 +2106,49 @@ function renderWholesale(){
       };
     });
   });
+}
+
+// ---- หน้ายกแพ็ค: แสดงเป็น “ช่องหมวด” เหมือนหน้าขาย (กดช่อง → เปิดชีตรวมสินค้าในหมวดนั้น) ----
+function renderWsBody(list){
+  var qNow = ($('wq').value || '').trim();
+  var cats = wsCatList();
+  if (qNow || !cats.length) {
+    $('wcats').style.display = 'none'; $('wcats').innerHTML = '';
+    $('wlist').innerHTML = wsCardsHtml(list); wireWsCards($('wlist'));
+  } else {
+    $('wlist').innerHTML = '';
+    $('wcats').style.display = 'block';
+    $('wcats').innerHTML = cats.map(function(c){
+      return '<button class="slot" data-cat="' + esc(c.name) + '">' + slotIconHtml(c.name) +
+        '<span class="snm">' + esc(c.name) + '</span>' +
+        '<span class="scnt">' + c.n + ' รายการ</span>' +
+        '<span class="sgo">เลือก ›</span></button>';
+    }).join('');
+    Array.prototype.forEach.call($('wcats').querySelectorAll('.slot'), function(b){
+      b.onclick = function(){ openWsCat(b.getAttribute('data-cat')); };
+    });
+  }
+}
+// หมวดที่มีสินค้าราคายกแพ็ค/ราคาส่ง
+function wsCatList(){
+  var m = {};
+  wholesaleProducts().forEach(function(p){ var c = catNameOf(p); (m[c] = m[c] || []).push(p); });
+  return Object.keys(m).sort(function(a, b){ return m[b].length - m[a].length; })
+    .map(function(c){ return { name: c, n: m[c].length }; });
+}
+function openWsCat(cat){
+  wsCurCat = cat;
+  renderWsCatBody();
+  openSheet('Ws', true);
+}
+function renderWsCatBody(){
+  var items = wholesaleProducts().filter(function(p){ return catNameOf(p) === wsCurCat; });
+  $('wsTitleTxt').textContent = '🏷️ ' + wsCurCat + ' · ' + items.length + ' รายการ';
+  $('wsBody').innerHTML = wsCardsHtml(items);
+  wireWsCards($('wsBody'));
+}
+function refreshWsSheet(){
+  if (wsCurCat && $('sheetWs') && $('sheetWs').classList.contains('show')) renderWsCatBody();
 }
 
 function quickAdjust(id, delta){
@@ -2295,6 +2349,9 @@ $('slowOnly').onchange = function(){ sLowOnly = $('slowOnly').checked; renderSto
 $('btnAddProduct').onclick = function(){ openProductForm(null); };
 $('btnAddFromSell').onclick = function(){ openProductForm(null); };
 $('btnAddFromWs').onclick = function(){ openProductForm(null); };
+$('xWs').onclick = function(){ openSheet('Ws', false); };
+$('ovWs').onclick = function(){ openSheet('Ws', false); };
+$('btnWsClose').onclick = function(){ openSheet('Ws', false); };
 $('wq').oninput = function(){ renderWholesale(); };
 // สรุปแบ่งเดือน
 $('btnAddOpt').onclick = function(){ var r = addOptRow('', ''); r.querySelector('.oCode').focus(); };

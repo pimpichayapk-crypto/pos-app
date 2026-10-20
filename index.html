@@ -1484,7 +1484,7 @@ function openProdFromCard(id){
 }
 function closeProd(){ openSheet('Prod', false); }
 // ---------- ชีตเลือกสินค้าในหมวด (กดหมวด → เด้งตัวเลือกขึ้นมา) ----------
-var pickCat = null, pkPick = '', pickGroup = '', pickExcl = [];   // pickExcl = token ที่ไม่ต้องโชว์ในชีตนี้ (มีช่องของตัวเองแล้ว)
+var pickCat = null, pkPick = '', pickGroup = '', pickExcl = [], pkOpt = {};   // pickExcl = token ที่ไม่ต้องโชว์ในชีตนี้ (มีช่องของตัวเองแล้ว)
 function catProducts(cat){ return products.filter(function(p){ return catNameOf(p) === cat; }); }
 // สินค้าที่จะโชว์ใน “ชีตตัวเลือก” ของหมวด (hideSheet = เอาออกจากชีต แต่ยังอยู่ในระบบ)
 function sheetProducts(cat){ return catProducts(cat).filter(function(p){ return !p.hideSheet; }); }
@@ -1523,8 +1523,11 @@ function renderCatPick(){
         '<span class="pc3">' + priceTxt(p, p.price) + '</span></button>';
     }).join('') + '</div>' : '';
   if (!list.length) html = '<div class="hint-note">ยังไม่มีสินค้าในหมวดนี้</div>';
-  var p = pkSel(), key = p ? optKey(p.id, '') : '', q = p ? n2(cart[key]) : 0;
-  var ep = p ? effectivePrice(p, cartQtyOfProduct(p.id)) : null;
+  var p = pkSel(), pOpts = p ? optionsOf(p) : [], pkCode = '';
+  // เลือกตัวเลือกที่คิดราคาต่างกัน (เช่น ตีนตุ๊กแก เต็มคู่ / ฝั่งเดียว) ได้ในชีตนี้เลย
+  if (p && pOpts.length) pkCode = String((pkOpt[p.id] && optionOf(p, pkOpt[p.id])) ? pkOpt[p.id] : (cartCodeOfProduct(p.id) || pOpts[0].code || ''));
+  var key = p ? optKey(p.id, pkCode) : '', q = p ? n2(cart[key]) : 0;
+  var ep = p ? priceWithOption(p, pkCode, cartQtyOfProduct(p.id)) : null;
   var uTxt = p ? esc(p.unit || 'ชิ้น') : 'ชิ้น';
   // บล็อกหัวชีตแบบ Shopee: รูป + ราคา + คลัง
   var selHtml = p
@@ -1539,7 +1542,19 @@ function renderCatPick(){
           '<div style="font-size:12.5px;font-weight:800;margin-top:5px">' + esc(p.name) + '</div>' +
         '</div></div>'
     : '<div class="pkhead" style="display:block;color:var(--muted);font-weight:700">👆 แตะสินค้าด้านล่างเพื่อเลือก</div>';
-  var qtyHtml = (p && hasOptions(p)) ? '<div class="hint-note" style="margin-top:8px">✂️ สินค้านี้มีตัวเลือก — กด <b>🎨 เลือกรหัส / สี ›</b> ด้านล่างเพื่อเลือก ' + esc(optionHint(p)) + ' (ฝั่งเดียว = ครึ่งราคา)</div>' : p ? '<div class="pdsec" style="border:2px solid #99f6e4;background:#f0fdfa;border-radius:14px;padding:11px 12px 10px">' +
+  // ---- เลือก “แบบ” ที่ราคาต่างกัน ในชีตนี้เลย (ตีนตุ๊กแก: เต็มคู่ / ฝั่งเดียว = ครึ่งราคา) ----
+  var optBlockHtml = (p && pOpts.length)
+    ? '<div class="pdsec" style="border:2px solid #99f6e4;background:#f0fdfa;border-radius:14px;padding:10px 11px"><div class="pdsec-h"><span>✂️ เลือกแบบ</span><span class="sel">' + (pkCode ? 'เลือก: ' + esc(optionDisplay(p, pkCode) || pkCode) : 'แตะเพื่อเลือก') + '</span></div>' +
+      '<div class="ochips" style="margin-top:8px">' + pOpts.map(function(o){
+        var code = String(o.code || ''), lbl = String(o.label || code || '-');
+        var of = n2(o.factor) > 0 && n2(o.factor) < 1 ? n2(o.factor) : 1;
+        var cq = n2(cart[optKey(p.id, code)]);
+        return '<button class="ochip' + (String(pkCode) === code ? ' on' : '') + '" data-ocode="' + esc(code) + '">' +
+          '<b>' + esc(lbl) + '</b>' +
+          (of < 1 ? '<span class="oc">' + (isOpenPrice(p) ? 'ครึ่งราคา' : money(n2(p.price) * of)) + '</span>' : '') +
+          (cq > 0 ? '<span class="ocb">ในตะกร้า ' + fmtQty(cq) + '</span>' : '') + '</button>';
+      }).join('') + '</div></div>' : '';
+  var qtyHtml = p ? '<div class="pdsec" style="border:2px solid #99f6e4;background:#f0fdfa;border-radius:14px;padding:11px 12px 10px">' +
       '<div class="pdsec-h"><span>🔢 ใส่จำนวนที่ต้องการ</span><span class="sel">' +
       (q > 0 ? 'ในตะกร้า ' + fmtQty(q) + ' ' + esc(p.unit || 'ชิ้น') + ' · ยอด ' + money(lineAmount(ep.price, q)) : 'พิมพ์ตัวเลข หรือกดปุ่มด้านล่าง') + '</span></div>' +
       '<div class="pdq" style="margin-top:9px"><button class="qbtn minus" data-act="minus">−</button>' +
@@ -1551,7 +1566,7 @@ function renderCatPick(){
       (q > 0 && isRounded(ep.price, q) ? '<div class="hint-note" style="margin-top:4px">💰 ปัดเศษขึ้นจาก ' + fmt(n2(ep.price) * q) + ' เป็นจำนวนเต็มบาท</div>' : '') +
       '<div class="hint-note" style="margin-top:6px">กดตัวเลข = ใส่จำนวนลงตะกร้าทันที · <b>ไม่ต้องไปแก้จำนวนในตะกร้าอีก</b></div>' +
       '</div>' : '';
-  $('pkBody').innerHTML = selHtml + (p ? qtyHtml : '') + html;
+  $('pkBody').innerHTML = selHtml + (p ? optBlockHtml + qtyHtml : '') + html;
   // ปุ่มจำนวนเร็ว + ช่องจำนวน ในชีต = ลงตะกร้าทันที (สินค้าราคาเปิดที่ยังไม่ใส่ราคา → เปิดชีตใส่ราคาให้ก่อน)
   function setFromSheet(v){
     v = n2(v);
@@ -1561,17 +1576,18 @@ function renderCatPick(){
   Array.prototype.forEach.call($('pkBody').querySelectorAll('[data-q]'), function(b){
     b.onclick = function(){ setFromSheet(n2(b.getAttribute('data-q'))); };
   });
+  var priceVar = p ? scaledOptions(p).length > 0 : false;   // ตัวเลือกที่ราคาต่างกัน (ตีนตุ๊กแก) → เพิ่มลงตะกร้าได้จากชีตนี้เลย
   var btn = $('btnPkAdd');
   if (!p) btn.textContent = '👆 เลือกสินค้าด้านล่างก่อน';
-  else if (hasOptions(p)) btn.textContent = '🎨 เลือกรหัส / สี ›';
+  else if (hasOptions(p) && !priceVar) btn.textContent = '🎨 เลือกรหัส / สี ›';
   else if (q > 0) btn.textContent = '✅ เสร็จแล้ว (ในตะกร้า ' + fmtQty(q) + ' ' + (p.unit || 'ชิ้น') + ')';
   else if (isOpenPrice(p)) btn.textContent = '💰 ใส่ราคา / จำนวน';
   else btn.textContent = '🛒 เพิ่ม 1 ' + (p.unit || 'ชิ้น') + ' · ' + money(ep.price);
   btn.onclick = function(){
     if (!p) { toast('⚠️ เลือกสินค้าก่อนครับ'); return; }
-    if (hasOptions(p)) { closeCatPick(); openProd(p.id); return; }
+    if (hasOptions(p) && !priceVar) { closeCatPick(); openProd(p.id); return; }
     if (n2(cart[key]) > 0) { closeCatPick(); return; }
-    addToCart(p.id);
+    addToCart(p.id, pkCode);
   };
   $('btnPkDetail').style.display = p ? 'block' : 'none';
   $('btnPkDetail').onclick = function(){ if (!p) return; var id = p.id; closeCatPick(); openProd(id); };
@@ -1583,6 +1599,10 @@ function renderCatPick(){
   };
   Array.prototype.forEach.call($('pkBody').querySelectorAll('.pkchip'), function(b){
     b.onclick = function(){ pkPick = b.getAttribute('data-id'); renderCatPick(); };
+  });
+  // เลือกแบบ (เต็มคู่ / ฝั่งเดียว) ในชีตนี้ — เปลี่ยนราคาที่โชว์ทันที
+  Array.prototype.forEach.call($('pkBody').querySelectorAll('[data-ocode]'), function(b){
+    b.onclick = function(){ if (!p) return; pkOpt[p.id] = String(b.getAttribute('data-ocode') || ''); renderCatPick(); };
   });
   var mn = $('pkBody').querySelector('[data-act="minus"]'), pl = $('pkBody').querySelector('[data-act="plus"]'), qi = $('pkBody').querySelector('.qin');
   if (mn) mn.onclick = function(){ var v = n2(cart[key]) - 1; if (v > 0) setFromSheet(v); else setQty(key, v); };
@@ -1621,7 +1641,7 @@ function renderProdSheet(){
 
   // ---- ตัวเลือก (สี/รหัส) แบบ Shopee ----
   // แถว “ตัวเลือกสินค้า” = สินค้าที่คล้ายกันในกลุ่มเดียวกัน (กดเพื่อสลับไปตัวอื่นได้)
-  var sibs = siblingsOf(p);
+  var sibs = scaledOptions(p).length ? [] : siblingsOf(p);   // สินค้าที่มีตัวเลือกคิดราคา (ตีนตุ๊กแก): ขนาดใครขนาดมัน — ไม่ลากขนาดอื่นเข้ามาในชีต
   var sibHtml = (sibs.length > 1)
     ? '<div class="pdrow pdlink" data-act="sibs" style="border-bottom:none;padding-bottom:2px"><span>ตัวเลือกสินค้า · ' + sibs.length + ' รายการ</span><b>ดูทั้งหมด ›</b></div>' +
       '<div class="sibstrip">' + sibs.map(function(x){
@@ -1931,7 +1951,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'price', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null, wsCurCat = '';
-var BUILD = 72;                        // เลขเวอร์ชันแอป (อัปเดตทุกครั้งที่แก้)
+var BUILD = 73;                        // เลขเวอร์ชันแอป (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }

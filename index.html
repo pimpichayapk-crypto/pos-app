@@ -1299,6 +1299,20 @@ function optionDisplay(p, code){
   return o ? (o.label || String(o.code || '')) : String(code);
 }
 function optKey(id, code){ return code ? (id + '#' + code) : id; }
+// ---------- ตัวเลือกที่มี “ตัวคูณราคา” (เช่น ตีนตุ๊กแก “ฝั่งเดียว” = ครึ่งราคาที่ตั้งไว้) ----------
+// สินค้าที่มีตัวเลือก factor < 1: ราคาของบรรทัดนั้น = ราคาที่ตั้งไว้ × factor (ตามราคาที่ตั้งไว้เสมอ)
+function optionFactor(code, p){ var o = optionOf(p, code), f = o ? n2(o.factor) : 0; return (f > 0 && f < 1) ? f : 1; }
+function scaledOptions(p){ return optionsOf(p).filter(function(o){ return n2(o.factor) > 0 && n2(o.factor) < 1; }); }
+function optionHint(p){
+  var l = optionsOf(p).map(function(o){ return String(o.label || o.code || ''); }).filter(Boolean);
+  return l.join(' / ');
+}
+function priceWithOption(p, code, qty){
+  var ep = effectivePrice(p, qty), f = optionFactor(code, p);
+  if (f === 1) return ep;
+  return { price: Math.round(n2(ep.price) * f * 100) / 100, wholesale: ep.wholesale, min: ep.min, factor: f };
+}
+
 function splitKey(k){
   var i = String(k).indexOf('#');
   return i < 0 ? { id: String(k), code: '' } : { id: String(k).slice(0, i), code: String(k).slice(i + 1) };
@@ -1504,7 +1518,7 @@ function renderCatPick(){
       return '<button class="pkchip' + (String(pkPick) === String(p.id) ? ' on' : '') + '" data-id="' + esc(p.id) + '">' +
         '<span class="pktile">' + tile + '</span>' +
         '<span class="pkname"><b>' + esc(p.name) + '</b>' +
-        (hasOptions(p) ? '<span class="pc2">' + optionsOf(p).length + ' รหัส</span>' : '') +
+        (hasOptions(p) ? '<span class="pc2">' + esc(optionHint(p) || (optionsOf(p).length + ' รหัส')) + '</span>' : '') +
         (cq > 0 ? '<span class="pcb">ในตะกร้า ' + fmtQty(cq) + '</span>' : '') + '</span>' +
         '<span class="pc3">' + priceTxt(p, p.price) + '</span></button>';
     }).join('') + '</div>' : '';
@@ -1519,12 +1533,13 @@ function renderCatPick(){
         '<div class="pkhi">' +
           '<div class="pkhp">' + (isOpenPrice(p) ? (n2(cartPrice[optKey(p.id, '')]) > 0 ? money(cartPrice[optKey(p.id, '')]) + ' <span class="u">/ ' + uTxt + ' · ใส่เอง</span>' : '💰 กำหนดราคาตอนขาย') : money(ep.price) + ' <span class="u">/ ' + uTxt + '</span>') + '</div>' +
           (n2(p.fullPrice) > 0 ? '<div class="pkhtag">💰 ' + (p.fullLabel ? esc(p.fullLabel) + ' ' : 'ขายเต็ม ') + money(p.fullPrice) + '</div>' : '') +
+          (scaledOptions(p).length ? '<div class="pkhtag">✂️ ' + scaledOptions(p).map(function(o){ return esc(o.label || o.code) + ' = ' + (isOpenPrice(p) ? 'ครึ่งราคา' : money(n2(p.price) * n2(o.factor))); }).join(' · ') + '</div>' : '') +
           (n2(p.wholesalePrice) > 0 ? '<div class="pkhtag">🏷️ ราคาส่ง ' + money(p.wholesalePrice) + ' · ' + fmtQty(wholesaleMinOf(p)) + ' ' + uTxt + 'ขึ้นไป' + (ep.wholesale ? ' ✅' : '') + '</div>' : '') +
           '<div class="pkhs">คงเหลือ ' + fmtQty(p.stock) + ' ' + uTxt + (q > 0 ? ' · ในตะกร้า ' + fmtQty(q) + ' ' + uTxt : '') + '</div>' +
           '<div style="font-size:12.5px;font-weight:800;margin-top:5px">' + esc(p.name) + '</div>' +
         '</div></div>'
     : '<div class="pkhead" style="display:block;color:var(--muted);font-weight:700">👆 แตะสินค้าด้านล่างเพื่อเลือก</div>';
-  var qtyHtml = p ? '<div class="pdsec" style="border:2px solid #99f6e4;background:#f0fdfa;border-radius:14px;padding:11px 12px 10px">' +
+  var qtyHtml = (p && hasOptions(p)) ? '<div class="hint-note" style="margin-top:8px">✂️ สินค้านี้มีตัวเลือก — กด <b>🎨 เลือกรหัส / สี ›</b> ด้านล่างเพื่อเลือก ' + esc(optionHint(p)) + ' (ฝั่งเดียว = ครึ่งราคา)</div>' : p ? '<div class="pdsec" style="border:2px solid #99f6e4;background:#f0fdfa;border-radius:14px;padding:11px 12px 10px">' +
       '<div class="pdsec-h"><span>🔢 ใส่จำนวนที่ต้องการ</span><span class="sel">' +
       (q > 0 ? 'ในตะกร้า ' + fmtQty(q) + ' ' + esc(p.unit || 'ชิ้น') + ' · ยอด ' + money(lineAmount(ep.price, q)) : 'พิมพ์ตัวเลข หรือกดปุ่มด้านล่าง') + '</span></div>' +
       '<div class="pdq" style="margin-top:9px"><button class="qbtn minus" data-act="minus">−</button>' +
@@ -1589,7 +1604,7 @@ function renderProdSheet(){
   var key = optKey(p.id, opts.length ? pdPick : '');
   var q = n2(cart[key]);                       // จำนวนของตัวเลือกที่เลือกอยู่
   var qTot = cartQtyOfProduct(p.id);           // รวมทุกตัวเลือก (ใช้คิดราคาส่ง)
-  var ep = effectivePrice(p, qTot);
+  var ep = priceWithOption(p, opts.length ? pdPick : '', qTot);
   $('pdTitle').textContent = p.name;
   var ic = p.image ? '<img src="' + esc(p.image) + '" alt="">' : '📦';
   var tags = '';
@@ -1598,7 +1613,8 @@ function renderProdSheet(){
   tags += '<span class="pdtag st">' + (sc === 'out' ? '⚠️ หมดสต็อก' : (sc === 'low' ? '⚠️ ใกล้หมด · เหลือ ' : 'เหลือ ') + fmtQty(p.stock) + ' ' + unit) + '</span>';
   var rows = '';
   if (p.category) rows += '<div class="pdrow"><span>หมวดหมู่</span><b>' + esc(p.category) + '</b></div>';
-  rows += '<div class="pdrow"><span>ราคาขายย่อย (คิดเงินจริง)</span>' + (isOpenPrice(p) ? '<b class="pdprice">💰 กำหนดราคาตอนขาย</b>' : '<b class="pdprice">' + money(p.price) + ' <span class="u">/ ' + unit + '</span></b>') + '</div>';
+  var fSel = optionFactor(opts.length ? pdPick : '', p);
+  rows += '<div class="pdrow"><span>ราคาขายย่อย (คิดเงินจริง)' + (fSel < 1 ? ' · ' + esc(optionDisplay(p, pdPick) || '') + ' = ครึ่งราคา' : '') + '</span>' + (isOpenPrice(p) ? '<b class="pdprice">💰 กำหนดราคาตอนขาย</b>' : '<b class="pdprice">' + money(fSel < 1 ? ep.price : p.price) + ' <span class="u">/ ' + unit + '</span></b>') + '</div>';
   if (n2(p.fullPrice) > 0) rows += '<div class="pdrow"><span>ราคาขายเต็ม' + (p.fullLabel ? ' (' + esc(p.fullLabel) + ')' : '') + '</span><b>' + money(p.fullPrice) + '</b></div>';
   if (n2(p.wholesalePrice) > 0) rows += '<div class="pdrow"><span>ราคาส่ง · ตั้งแต่ ' + fmtQty(wholesaleMinOf(p)) + ' ' + unit + '</span><b>' + money(p.wholesalePrice) + '</b></div>';
   if (p.note) rows += '<div class="pdrow"><span>หมายเหตุ</span><b>' + esc(p.note) + '</b></div>';
@@ -1621,9 +1637,11 @@ function renderProdSheet(){
       '<div class="ochips">' + opts.map(function(o){
         var code = String(o.code || ''), lbl = String(o.label || code || '-');
         var cq = n2(cart[optKey(p.id, code)]);
+        var of = n2(o.factor) > 0 && n2(o.factor) < 1 ? n2(o.factor) : 1;
         return '<button class="ochip' + (String(pdPick) === code ? ' on' : '') + '" data-code="' + esc(code) + '">' +
           '<b>' + esc(lbl) + '</b>' +
           (code && code !== lbl ? '<span class="oc">' + esc(code) + '</span>' : '') +
+          (of < 1 ? '<span class="oc">' + (isOpenPrice(p) ? 'ครึ่งราคา' : money(n2(p.price) * of)) + '</span>' : '') +
           (cq > 0 ? '<span class="ocb">ในตะกร้า ' + fmtQty(cq) + '</span>' : '') +
           '</button>';
       }).join('') + '</div></div>';
@@ -1695,12 +1713,12 @@ function cartItems(){
     var q = n2(cart[key]);
     var packLine = (s.code === '#pack');                    // บรรทัดขาย “ยกแพ็ค” (คิดเงินเป็นแพ็ค)
     // ราคาส่งคิดจากจำนวนรวมทุกสีของสินค้านั้น
-    var ep = packLine ? { price: n2(p.packPrice), wholesale: true, min: 1 } : effectivePrice(p, totals[s.id]);
+    var ep = packLine ? { price: n2(p.packPrice), wholesale: true, min: 1 } : priceWithOption(p, s.code, totals[s.id]);
     var manual = n2(cartPrice[key]);
     if (manual > 0) ep = { price: manual, wholesale: false, min: wholesaleMinOf(p) };   // ราคาที่ใส่เอง (ราคาเปิด) ชนะทุกกรณี
     var lbl = packLine ? 'ยกแพ็ค' : optionDisplay(p, s.code);
     return { key: key, id: p.id, name: p.name + (lbl && !packLine ? ' · ' + lbl : ''), baseName: p.name,
-             option: lbl, optionCode: packLine ? '' : (s.code || ''),
+             option: lbl, optionCode: (packLine || String(s.code || '') === String(lbl)) ? '' : String(s.code || ''),
              unit: packLine ? 'แพ็ค' : (p.unit || 'ชิ้น'), price: ep.price, listPrice: n2(p.price), qty: q,
              amount: lineAmount(ep.price, q), raw: Math.round(n2(ep.price) * q * 100) / 100,
              rounded: isRounded(ep.price, q), pack: packLine,
@@ -1913,7 +1931,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'price', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null, wsCurCat = '';
-var BUILD = 71;                        // เลขเวอร์ชันแอป (อัปเดตทุกครั้งที่แก้)
+var BUILD = 72;                        // เลขเวอร์ชันแอป (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }

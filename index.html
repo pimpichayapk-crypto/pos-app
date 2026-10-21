@@ -1183,7 +1183,8 @@ function catNameOf(p){ var c = String(p.category || '').trim(); return c || 'ไ
 function catList(){
   var counts = {};
   products.forEach(function(p){ var c = catNameOf(p); counts[c] = (counts[c] || 0) + 1; });
-  return Object.keys(counts).sort(function(a,b){ return counts[b] - counts[a] || a.localeCompare(b, 'th'); })
+  // เจ้าของร้านสั่ง: ช่องหมวดหมู่ในหน้าขายให้เรียง “ตัวอักษร ก→ฮ” (เดิมเรียงตามจำนวนรายการ)
+  return Object.keys(counts).sort(function(a,b){ return a.localeCompare(b, 'th'); })
     .map(function(c){ return { name: c, n: counts[c] }; });
 }
 function subTokensOf(list){
@@ -1393,26 +1394,27 @@ function renderProducts(){
   }
   // สินค้าที่ถูกกลุ่มย่อย (optGroups) ครอบอยู่แล้ว → ไม่นับซ้ำในช่องของหมวด
   function grpCovers(p){ return grpSlots.some(function(g){ return catNameOf(p) === g.cat && subMatch(p, g.token); }); }
-  var slotHtml = slotCats.map(function(cn){
-    var items = list.filter(function(p){ return catNameOf(p) === cn && !grpCovers(p); });
-    var prices = items.map(function(p){ return n2(p.price); }).filter(function(v){ return v > 0; });
-    var range = prices.length ? money(Math.min.apply(null, prices)) + ' – ' + money(Math.max.apply(null, prices)) : '';
-    return '<button class="slot optcat" data-cat="' + esc(cn) + '">' +
-      slotIconHtml(cn) +
-      '<span class="snm">' + esc(cn) + '</span>' +
-      '<span class="scnt">' + items.length + ' รายการ</span>' +
-      '<span class="sgo">เลือก ›</span></button>';
-  }).join('');
-  slotHtml += grpSlots.map(function(g){
-    var items = groupItems(list, g);
-    var prices = items.map(function(p){ return n2(p.price); }).filter(function(v){ return v > 0; });
-    var range = prices.length ? money(Math.min.apply(null, prices)) + ' – ' + money(Math.max.apply(null, prices)) : '';
-    return '<button class="slot optcat" data-cat="' + esc(g.cat) + '" data-tok="' + esc(g.token) + '">' +
-      slotIconHtml(g.cat) +
-      '<span class="snm">' + esc(g.label || g.token) + '</span>' +
-      '<span class="scnt">' + items.length + ' รายการ</span>' +
-      '<span class="sgo">เลือก ›</span></button>';
-  }).join('');
+  var slotHtml = (function(){
+    // รวมช่องหมวด + ช่องกลุ่มย่อย แล้วเรียงตามตัวอักษร ก→ฮ ทั้งหมด (เจ้าของร้านสั่ง)
+    var all = slotCats.map(function(cn){
+      var items = list.filter(function(p){ return catNameOf(p) === cn && !grpCovers(p); });
+      return { label: cn, html: '<button class="slot optcat" data-cat="' + esc(cn) + '">' +
+        slotIconHtml(cn) +
+        '<span class="snm">' + esc(cn) + '</span>' +
+        '<span class="scnt">' + items.length + ' รายการ</span>' +
+        '<span class="sgo">เลือก ›</span></button>' };
+    }).concat(grpSlots.map(function(g){
+      var items = groupItems(list, g);
+      var lbl = String(g.label || g.token || '');
+      return { label: lbl, html: '<button class="slot optcat" data-cat="' + esc(g.cat) + '" data-tok="' + esc(g.token) + '">' +
+        slotIconHtml(g.cat) +
+        '<span class="snm">' + esc(lbl) + '</span>' +
+        '<span class="scnt">' + items.length + ' รายการ</span>' +
+        '<span class="sgo">เลือก ›</span></button>' };
+    }));
+    all.sort(function(a, b){ return String(a.label).localeCompare(String(b.label), 'th'); });
+    return all.map(function(x){ return x.html; }).join('');
+  })();
   var cardList = list.filter(function(p){
     if (slotCats.indexOf(catNameOf(p)) >= 0) return false;
     return !grpSlots.some(function(g){ return catNameOf(p) === g.cat && subMatch(p, g.token); });
@@ -1986,7 +1988,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'price', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null, wsCurCat = '';
-var BUILD = 81;                        // เลขเวอร์ชันแอป (อัปเดตทุกครั้งที่แก้)
+var BUILD = 82;                        // เลขเวอร์ชันแอป (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }

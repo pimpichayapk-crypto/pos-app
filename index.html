@@ -94,6 +94,15 @@ html.shopee .thbtn.on{border-color:#ee4d2d;color:#ee4d2d;background:#fdece7}
 .shopsearch{margin-top:12px;background:#fff;border-radius:12px;display:flex;align-items:center;gap:8px;padding:0 12px}
 .shopsearch .ic{font-size:15px;opacity:.7}
 .shopsearch input{flex:1;border:none;outline:none;background:none;font-family:inherit;font-size:15px;padding:14px 0;color:var(--text)}
+/* เรียงรายการสินค้า (หน้าขาย) */
+.sortsell{margin-top:9px;display:flex;align-items:center;gap:8px}
+.sortsell .lb{font-size:12px;font-weight:800;color:#fff;opacity:.9}
+.sortsell select{font-family:inherit;font-size:12.5px;font-weight:800;color:#fff;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.38);border-radius:10px;padding:7px 10px}
+.sortsell select option{color:#111}
+/* แถวเลือกวิธีเรียงในชีตตัวเลือก */
+.sortsrow{display:flex;align-items:center;gap:6px;margin:2px 0 8px;font-size:12px;font-weight:800;color:var(--muted)}
+.sortsrow .srt{border:1.5px solid var(--line);background:#fff;border-radius:9px;padding:5px 9px;font-family:inherit;font-size:12px;font-weight:800;color:var(--muted);cursor:pointer}
+.sortsrow .srt.on{border-color:var(--primary);color:var(--primary);background:#f0fdfa}
 /* แท็บในร้าน (แบบ Shopee) */
 .stabs{display:flex;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:12}
 .stabs button{flex:1;border:none;background:none;font-family:inherit;font-size:14px;font-weight:800;color:var(--muted);padding:13px 4px 11px;border-bottom:3px solid transparent;cursor:pointer}
@@ -537,6 +546,13 @@ html.shopee .slot .spr{background:rgba(238,77,45,.10)}
       <div class="shopsearch">
         <span class="ic">🔍</span><input id="q" type="search" placeholder="ค้นหาสินค้า / รหัส ในร้าน">
       </div>
+      <div class="sortsell">
+        <span class="lb">เรียงรายการสินค้า</span>
+        <select id="sellSort">
+          <option value="price">💰 ราคา ถูก→แพง</option>
+          <option value="name">🔤 ชื่อ ก→ฮ</option>
+        </select>
+      </div>
     </div>
     <!-- แท็บในร้าน (แบบ Shopee) -->
     <div class="stabs" id="sellTabs">
@@ -897,7 +913,7 @@ var cartDisc = {};         // key -> ส่วนลดรายตัว (บ�
 var payMethod = 'cash';
 var currentOrder = null;   // บิลที่เปิดดูอยู่
 var filterCat = 'all', hRange = 'today', rRange = 'today';
-var sellCat = null, sellSub = '';   // ชั้นของแท็บ ปลีก
+var sellCat = null, sellSub = '', sellSort = 'price';   // ชั้นของแท็บ ปลีก · sellSort = วิธีเรียงรายการสินค้า (price | name)
 var sellTab = 'all';                // 'all' = สินค้าทั้งหมด (การ์ด · แท็บแรก) · 'cat' = ช่องหมวดหมู่
 function setSellTab(t){
   sellTab = t;
@@ -1179,6 +1195,8 @@ function byPriceNat(a, b){
   var d = n2(a.price) - n2(b.price);
   return d ? d : byNameNat(a, b);
 }
+// เรียงรายการสินค้าตามที่เจ้าของร้านเลือก: ราคา (ค่าเริ่มต้น) หรือ ชื่อ ก→ฮ
+function bySellSort(a, b){ return sellSort === 'name' ? byNameNat(a, b) : byPriceNat(a, b); }
 function catNameOf(p){ var c = String(p.category || '').trim(); return c || 'ไม่ระบุหมวด'; }
 function catList(){
   var counts = {};
@@ -1284,7 +1302,7 @@ function filteredProducts(){
     if (!q) return true;
     if (isWholesaleQuery(q) && n2(p.wholesalePrice) > 0) return true;
     return String(p.name || '').toLowerCase().indexOf(q) >= 0 || String(p.category || '').toLowerCase().indexOf(q) >= 0 || optMatch(p, q);
-  }).sort(byPriceNat);                                              // เรียงตามราคา ถูก → แพง (เจ้าของร้านสั่งไว้)
+  }).sort(bySellSort);                                              // เรียงตามที่เลือก: ราคา ถูก → แพง (ค่าเริ่มต้น) หรือ ชื่อ ก→ฮ
 }
 function stockClass(p){
   var s = n2(p.stock), low = p.lowStock == null ? 5 : n2(p.lowStock);
@@ -1509,7 +1527,7 @@ function closeCatPick(){ openSheet('Pick2', false); }
 function pkSel(){ return pkPick ? products.find(function(x){ return x.id === pkPick; }) : null; }
 function renderCatPick(){
   if (!$('pkBody') || !pickCat) return;
-  var all = sheetProducts(pickCat).slice().sort(byPriceNat);
+  var all = sheetProducts(pickCat).slice().sort(bySellSort);
   if (pickExcl.length) all = all.filter(function(p){ return !pickExcl.some(function(t){ return subMatch(p, t); }); });
   // เจ้าของร้านสั่ง “สินค้าทุกชนิดให้เรียงตามราคา” ⇒ ชีตทุกหมวดเรียงราคาถูก→แพง
   // (ลำดับที่เคยตั้งเองใน settings.sheetOrder ไม่ถูกใช้แล้ว — ถ้าจะกลับไปใช้ บอกได้)
@@ -1527,6 +1545,10 @@ function renderCatPick(){
         '<span class="pc3">' + priceTxt(p, p.price) + '</span></button>';
     }).join('') + '</div>' : '';
   if (!list.length) html = '<div class="hint-note">ยังไม่มีสินค้าในหมวดนี้</div>';
+  // แถวเลือกวิธีเรียง (ในชีตเลย — หาเร็ว) : ราคา หรือ ชื่อ ก→ฮ
+  var sortRow = '<div class="sortsrow"><span>เรียง:</span>' +
+    '<button class="srt' + (sellSort === 'price' ? ' on' : '') + '" data-srt="price">💰 ราคา</button>' +
+    '<button class="srt' + (sellSort === 'name' ? ' on' : '') + '" data-srt="name">🔤 ชื่อ ก→ฮ</button></div>';
   var p = pkSel(), pOpts = p ? optionsOf(p) : [], pkCode = '';
   // เลือกตัวเลือกที่คิดราคาต่างกัน (เช่น ตีนตุ๊กแก เต็มคู่ / ฝั่งเดียว) ได้ในชีตนี้เลย
   if (p && pOpts.length) pkCode = String((pkOpt[p.id] && optionOf(p, pkOpt[p.id])) ? pkOpt[p.id] : (cartCodeOfProduct(p.id) || pOpts[0].code || ''));
@@ -1570,7 +1592,7 @@ function renderCatPick(){
       (q > 0 && isRounded(ep.price, q) ? '<div class="hint-note" style="margin-top:4px">💰 ปัดเศษขึ้นจาก ' + fmt(n2(ep.price) * q) + ' เป็นจำนวนเต็มบาท</div>' : '') +
       '<div class="hint-note" style="margin-top:6px">กดตัวเลข = ใส่จำนวนลงตะกร้าทันที · <b>ไม่ต้องไปแก้จำนวนในตะกร้าอีก</b></div>' +
       '</div>' : '';
-  $('pkBody').innerHTML = selHtml + (p ? optBlockHtml + qtyHtml : '') + html;
+  $('pkBody').innerHTML = selHtml + (p ? optBlockHtml + qtyHtml : '') + sortRow + html;
   // ปุ่มจำนวนเร็ว + ช่องจำนวน ในชีต = ลงตะกร้าทันที (สินค้าราคาเปิดที่ยังไม่ใส่ราคา → เปิดชีตใส่ราคาให้ก่อน)
   function setFromSheet(v){
     v = n2(v);
@@ -1607,6 +1629,10 @@ function renderCatPick(){
   // เลือกแบบ (เต็มคู่ / ฝั่งเดียว) ในชีตนี้ — เปลี่ยนราคาที่โชว์ทันที
   Array.prototype.forEach.call($('pkBody').querySelectorAll('[data-ocode]'), function(b){
     b.onclick = function(){ if (!p) return; pkOpt[p.id] = String(b.getAttribute('data-ocode') || ''); renderCatPick(); };
+  });
+  // เปลี่ยนวิธีเรียงในชีต (ราคา / ชื่อ ก→ฮ) — จำค่าไว้ใช้กับหน้าขายด้วย
+  Array.prototype.forEach.call($('pkBody').querySelectorAll('[data-srt]'), function(b){
+    b.onclick = function(){ setSellSort(b.getAttribute('data-srt')); };
   });
   var mn = $('pkBody').querySelector('[data-act="minus"]'), pl = $('pkBody').querySelector('[data-act="plus"]'), qi = $('pkBody').querySelector('.qin');
   if (mn) mn.onclick = function(){ var v = n2(cart[key]) - 1; if (v > 0) setFromSheet(v); else setQty(key, v); };
@@ -1986,7 +2012,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'price', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null, wsCurCat = '';
-var BUILD = 79;                        // เลขเวอร์ชันแอป (อัปเดตทุกครั้งที่แก้)
+var BUILD = 80;                        // เลขเวอร์ชันแอป (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }
@@ -2073,7 +2099,7 @@ function renderStockSheet(){
 // ---------- สินค้าราคาส่ง ----------
 function wholesaleProducts(){
   return products.filter(function(p){ return n2(p.wholesalePrice) > 0 || isPack(p); })
-    .sort(byPriceNat);
+    .sort(bySellSort);        // เรียงตามที่เลือกไว้ (ราคา / ชื่อ ก→ฮ)
 }
 function wsDiscount(p){
   var r = n2(p.price), w = n2(p.wholesalePrice);
@@ -2917,6 +2943,16 @@ $('xOrder').onclick = function(){ openSheet('Order', false); };
 $('ovOrder').onclick = function(){ openSheet('Order', false); };
 $('btnClearCart').onclick = function(){ if (!Object.keys(cart).length) return; if (!confirm('ล้างตะกร้าทั้งหมด?')) return; cart = {}; cartPrice = {}; cartDisc = {}; $('discount').value=''; $('received').value=''; renderProducts(); renderCart(); };
 $('q').oninput = function(){ sellSub = ''; renderSell(); };
+// เรียงรายการสินค้า: ราคา (ค่าเริ่มต้น) หรือ ชื่อ ก→ฮ — จำค่าไว้ในเครื่อง ใช้ทั้งหน้าขายและชีตตัวเลือก
+function setSellSort(v){
+  sellSort = (v === 'name') ? 'name' : 'price';
+  try { localStorage.setItem('pos.sellSort', sellSort); } catch(e){}
+  if ($('sellSort')) $('sellSort').value = sellSort;
+  renderSell();
+  if (pickCat) renderCatPick();
+}
+try { if (localStorage.getItem('pos.sellSort') === 'name') sellSort = 'name'; } catch(e){}
+if ($('sellSort')) { $('sellSort').value = sellSort; $('sellSort').onchange = function(){ setSellSort($('sellSort').value); }; }
 function applyTheme(t){
   var th = (t === 'shopee') ? 'shopee' : 'green';
   document.documentElement.classList.toggle('shopee', th === 'shopee');

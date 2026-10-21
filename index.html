@@ -1993,7 +1993,7 @@ function checkout(){
 
 // ---------- สินค้า / สต็อก (เพิ่ม–แก้ไข–นับสต็อก) ----------
 var sCat = 'all', sSort = 'price', sLowOnly = false, editingProduct = null, stockTarget = null, imgData = null, wsCurCat = '';
-var BUILD = 75;                        // เลขเวอร์ชันแอป (อัปเดตทุกครั้งที่แก้)
+var BUILD = 76;                        // เลขเวอร์ชันแอป (อัปเดตทุกครั้งที่แก้)
 var currentView = 'Stock';
 var VIEW_NAMES = { Sell: '🛒 ปลีก', Stock: '📦 หน้าสินค้า / นับสต็อก', Wholesale: '🏷️ ยกแพ็ค', History: '🧾 ประวัติการขาย', Report: '📊 สรุปยอดขาย', Settings: '⚙️ ตั้งค่า' };
 function viewName(v){ return VIEW_NAMES[v] || ''; }
@@ -2525,7 +2525,7 @@ function receiptHTML(o){
     var tag = i.wholesale ? ' <span style="font-size:10px;font-weight:800;color:#92400e;background:#fef3c7;border-radius:99px;padding:1px 6px">ราคาส่ง</span>' : '';
     var from = (i.wholesale && n2(i.listPrice) > n2(i.price)) ? ' · จาก ' + fmt(i.listPrice) : '';
     var cd = i.optionCode ? ' · รหัส ' + esc(i.optionCode) : '';
-    return '<tr><td>' + esc(i.name) + tag + '<br><span style="color:#64748b;font-size:11px">' + fmtQty(i.qty) + ' × ' + fmt(i.price) + from + cd + (i.rounded ? ' · ปัดขึ้น' : '') + (n2(i.disc) > 0 ? ' · -' + fmt(i.disc) : '') + '</span></td><td class="r">' + fmt(itemAmount(i)) + '</td></tr>';
+    return '<tr><td>' + esc(i.name) + tag + '<br><span style="color:#64748b;font-size:11px">' + fmtQty(i.qty) + ' × ' + fmt(i.price) + from + cd + (i.rounded ? ' · ปัดขึ้น' : '') + (n2(i.disc) > 0 ? ' · ลด ' + fmt(i.disc) : '') + '</span></td><td class="r">' + fmt(itemAmount(i)) + '</td></tr>';
   }).join('');
   var payTxt = o.pay && o.pay.method === 'transfer' ? 'โอน' : 'เงินสด';
   var h = '<div class="receipt"><div class="ctr"><div class="shop">' + esc(settings.shopName || 'ร้านของฉัน') + '</div>' +
@@ -2551,7 +2551,7 @@ function receiptText(o){
   if (o.seller) L.push('ผู้ขาย: ' + o.seller);
   L.push('ใบเสร็จรับเงิน' + (o.status === 'void' ? ' (ยกเลิก)' : ''));
   L.push('------------------------------');
-  (o.items||[]).forEach(function(i){ L.push(i.name + (i.optionCode ? ' [' + i.optionCode + ']' : '') + (i.wholesale ? ' (ราคาส่ง)' : '') + ' ' + fmtQty(i.qty) + ' × ' + fmt(i.price) + (n2(i.disc) > 0 ? ' (-' + fmt(i.disc) + ')' : '') + ' = ' + fmt(itemAmount(i)) + (i.rounded ? ' (ปัดขึ้น)' : '')); });
+  (o.items||[]).forEach(function(i){ L.push(i.name + (i.optionCode ? ' [' + i.optionCode + ']' : '') + (i.wholesale ? ' (ราคาส่ง)' : '') + ' ' + fmtQty(i.qty) + ' × ' + fmt(i.price) + (n2(i.disc) > 0 ? ' (ลด ' + fmt(i.disc) + ')' : '') + ' = ' + fmt(itemAmount(i)) + (i.rounded ? ' (ปัดขึ้น)' : '')); });
   L.push('------------------------------');
   L.push('รวม ' + fmt(o.subtotal));
   if (n2(o.discount)) L.push('ส่วนลด -' + fmt(o.discount));
@@ -3023,7 +3023,7 @@ function labelCompactHTML(o, tiny){
     h += '<div class="sub lbl-mid">' + (o.items||[]).length + ' รายการ · ' + fmtQty(qty) + ' ชิ้น</div>';
   } else {
     var rows = (o.items||[]).map(function(i){
-      return '<tr><td>' + esc(i.name) + (i.optionCode ? ' [' + esc(i.optionCode) + ']' : '') + (i.wholesale ? ' (ราคาส่ง)' : '') + '</td><td class="r">' + fmtQty(i.qty) + '×' + fmt(i.price) + (n2(i.disc) > 0 ? '<br><span style="font-size:10px">-' + fmt(i.disc) + '</span>' : '') + '</td></tr>';
+      return '<tr><td>' + esc(i.name) + (i.optionCode ? ' [' + esc(i.optionCode) + ']' : '') + (i.wholesale ? ' (ราคาส่ง)' : '') + '</td><td class="r">' + fmtQty(i.qty) + '×' + fmt(i.price) + (n2(i.disc) > 0 ? '<br><span style="font-size:10px">ลด ' + fmt(i.disc) + '</span>' : '') + '</td></tr>';
     });
     var shown = rows.slice(0, 8).join('');
     if (rows.length > 8) shown += '<tr><td colspan="2" class="sub">…+อีก ' + (rows.length - 8) + ' รายการ</td></tr>';
@@ -3042,7 +3042,7 @@ function receiptDocHTML(o){
   if (p === 'l6080') return labelCompactHTML(o, false);
   var isVoid = o.status === 'void';
   var rows = (o.items||[]).map(function(i){
-    return '<tr><td>' + esc(i.name) + (i.optionCode ? ' [' + esc(i.optionCode) + ']' : '') + (i.wholesale ? ' (ราคาส่ง)' : '') + '<div class="sub">' + fmtQty(i.qty) + ' × ' + fmt(i.price) + esc(unitTxt(i.unit)) + (n2(i.disc) > 0 ? ' · -' + fmt(i.disc) : '') + '</div></td>' +
+    return '<tr><td>' + esc(i.name) + (i.optionCode ? ' [' + esc(i.optionCode) + ']' : '') + (i.wholesale ? ' (ราคาส่ง)' : '') + '<div class="sub">' + fmtQty(i.qty) + ' × ' + fmt(i.price) + esc(unitTxt(i.unit)) + (n2(i.disc) > 0 ? ' · ลด ' + fmt(i.disc) : '') + '</div></td>' +
       '<td class="r">' + fmt(itemAmount(i)) + '</td></tr>';
   }).join('');
   var payTxt = (o.pay && o.pay.method === 'transfer') ? 'โอน' : 'เงินสด';
@@ -3111,7 +3111,7 @@ function receiptOps(o){
   ops.push({ t:'hr' });
   (o.items || []).forEach(function(i){
     ops.push({ t:'row', l: i.name + (i.optionCode ? ' [' + i.optionCode + ']' : '') + (i.wholesale ? ' (ราคาส่ง)' : ''), r: fmt(itemAmount(i)) });
-    ops.push({ t:'row', l: fmtQty(i.qty) + ' × ' + fmt(i.price) + unitTxt(i.unit) + (n2(i.disc) > 0 ? ' · -' + fmt(i.disc) : ''), r:'', dim:true });
+    ops.push({ t:'row', l: fmtQty(i.qty) + ' × ' + fmt(i.price) + unitTxt(i.unit) + (n2(i.disc) > 0 ? ' · ลด ' + fmt(i.disc) : ''), r:'', dim:true });
   });
   ops.push({ t:'hr' });
   ops.push({ t:'row', l:'รวม', r: fmt(o.subtotal) });
